@@ -1,0 +1,1218 @@
+---
+title: "Data set creation"
+author: "Iona Lyell"
+date: "19/08/2021"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### load packages
+```{r}
+library(readr)
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(skimr)
+```
+
+
+
+## GENDER SOCIAL NORMS INDEX
+
+from: http://hdr.undp.org/en/gsni  Gender Social Norms Index data tables (Excel)
+
+```{r}
+gsni_tables <- read_excel("data/gsni_tables.xlsx")
+gsni_tables <- as.data.table(gsni_tables)
+
+#rename columns
+setnames(gsni_tables, "Table A1: Gender Social Norms Index (GSNI), last available period", "location_name")
+setnames(gsni_tables, "...2", "GSNI_PERIOD")
+setnames(gsni_tables, "...3", "onebias") #share of people with at least 1 bias (%)
+setnames(gsni_tables, "...4", "twobias") #share of people with at least 2 biases (%)
+setnames(gsni_tables, "...5", "nobias") #share of people with no (%)
+setnames(gsni_tables, "...6", "political") #share of people with political bias (%)
+setnames(gsni_tables, "...7", "economic") #share of people with economic bias (%)
+setnames(gsni_tables, "...8", "educational") #share of people with educational bias (%)
+setnames(gsni_tables, "...9", "physical") #share of people with physical bias (%)
+
+
+gsni_tables <- gsni_tables[8:82]
+ #n = 75
+
+
+```
+
+## CVD MORTALITY RATES PER COUNTRY FOR MEN and WOMEN AND OVERALL 
+
+from: http://ghdx.healthdata.org/gbd-results-tool
+
+Measure: Deaths
+Age: Age standardized   
+Year: 2005-2019 (data collections for GINI 2005-2009 or 2010-2014) 
+Need to use all the same year probably?2014
+Cause: B.2 cardiovascular disease
+Context: Cause
+Location: Select only countries and territories
+Sex: Male + Female + Both
+Metric: Rate
+
+Deaths per 100, 000 population (confimred by GBD CODEBOOK IHME_GBD_2019_MEASURE_METRIC_DEFINITIONS_Y2020M10D15) from http://ghdx.healthdata.org/gbd-results-tool
+
+```{r}
+gbd_cvd_mort <- read_csv("data/IHME-GBD_2019_DATA-703c6c0a-1/IHME-GBD_2019_DATA-703c6c0a-1.csv")
+gbd_cvd_mort <- as.data.table(gbd_cvd_mort)
+
+
+```
+Create columns of each sex catergory and year...
+```{r}
+gbd_cvd_mort <- gbd_cvd_mort[, .(location_name, sex_name, year, val)] #just columns we want
+
+gbd_cvd_mort_split <- split(gbd_cvd_mort, gbd_cvd_mort$year)
+
+cvd_2005 <- gbd_cvd_mort_split$`2005`
+cvd_2006 <- gbd_cvd_mort_split$`2006`
+cvd_2007 <- gbd_cvd_mort_split$`2007`
+cvd_2008 <- gbd_cvd_mort_split$`2008`
+cvd_2009 <- gbd_cvd_mort_split$`2009`
+cvd_2010 <- gbd_cvd_mort_split$`2010`
+cvd_2011 <- gbd_cvd_mort_split$`2011`
+cvd_2012 <- gbd_cvd_mort_split$`2012`
+cvd_2013 <- gbd_cvd_mort_split$`2013`
+cvd_2014 <- gbd_cvd_mort_split$`2014`
+cvd_2015 <- gbd_cvd_mort_split$`2015`
+cvd_2016 <- gbd_cvd_mort_split$`2016`
+cvd_2017 <- gbd_cvd_mort_split$`2017`
+cvd_2018 <- gbd_cvd_mort_split$`2018`
+cvd_2019 <- gbd_cvd_mort_split$`2019`
+setnames(cvd_2005, "val", "cvd2005")
+setnames(cvd_2006, "val", "cvd2006")
+setnames(cvd_2007, "val", "cvd2007")
+setnames(cvd_2008, "val", "cvd2008")
+setnames(cvd_2009, "val", "cvd2009")
+setnames(cvd_2010, "val", "cvd2010")
+setnames(cvd_2011, "val", "cvd2011")
+setnames(cvd_2012, "val", "cvd2012")
+setnames(cvd_2013, "val", "cvd2013")
+setnames(cvd_2014, "val", "cvd2014")
+setnames(cvd_2015, "val", "cvd2015")
+setnames(cvd_2016, "val", "cvd2016")
+setnames(cvd_2017, "val", "cvd2017")
+setnames(cvd_2018, "val", "cvd2018")
+setnames(cvd_2019, "val", "cvd2019")
+cvd_2005[, year:= NULL]
+cvd_2006[, year:= NULL]
+cvd_2007[, year:= NULL]
+cvd_2008[, year:= NULL]
+cvd_2009[, year:= NULL]
+cvd_2010[, year:= NULL]
+cvd_2011[, year:= NULL]
+cvd_2012[, year:= NULL]
+cvd_2013[, year:= NULL]
+cvd_2014[, year:= NULL]
+cvd_2015[, year:= NULL]
+cvd_2016[, year:= NULL]
+cvd_2017[, year:= NULL]
+cvd_2018[, year:= NULL]
+cvd_2019[, year:= NULL]
+
+
+MyMerge <- function(x, y){
+  df <- merge(x, y, by= c("location_name", "sex_name"), all.x= TRUE, all.y= TRUE)
+  return(df)
+}
+cvdallyears <- Reduce(MyMerge, list(cvd_2005, cvd_2006, cvd_2007, cvd_2008, cvd_2009, cvd_2010, cvd_2011, cvd_2012, cvd_2013, cvd_2014, cvd_2015, cvd_2016, cvd_2017, cvd_2018,cvd_2019))
+
+
+cvdallyears_split <- split(cvdallyears, cvdallyears$sex_name)
+cvdallyearsboth <- cvdallyears_split$`Both`
+cvdallyearsfemale <- cvdallyears_split$`Female`
+cvdallyearsmale <- cvdallyears_split$`Male`
+
+names(cvdallyearsboth)[3:17] <- c("cvd05both", "cvd06both", "cvd07both", "cvd08both", "cvd09both", "cvd10both", "cvd11both", "cvd12both", "cvd13both", "cvd14both", "cvd15both", "cvd16both", "cvd17both", "cvd18both", "cvd19both")
+cvdallyearsboth[, sex_name := NULL]
+
+names(cvdallyearsfemale)[3:17] <- c("cvd05fem", "cvd06fem", "cvd07fem", "cvd08fem", "cvd09fem", "cvd10fem", "cvd11fem", "cvd12fem", "cvd13fem", "cvd14fem", "cvd15fem", "cvd16fem", "cvd17fem", "cvd18fem", "cvd19fem")
+cvdallyearsfemale[, sex_name := NULL]
+
+names(cvdallyearsmale)[3:17] <- c("cvd05male", "cvd06male", "cvd07male", "cvd08male", "cvd09male", "cvd10male", "cvd11male", "cvd12male", "cvd13male", "cvd14male", "cvd15male", "cvd16male", "cvd17male", "cvd18male", "cvd19male")
+cvdallyearsmale[, sex_name := NULL]
+
+MyMerge <- function(x, y){
+  df <- merge(x, y, by= c("location_name"), all.x= TRUE, all.y= TRUE)
+  return(df)
+}
+cvdfinal<- Reduce(MyMerge, list(cvdallyearsfemale, cvdallyearsmale, cvdallyearsboth))
+
+```
+
+
+
+```{r}
+
+#rename countries
+
+cvdfinal$location_name[cvdfinal$location_name == "Iran (Islamic Republic of)"] <- "Iran, Islamic Republic of"
+
+cvdfinal$location_name[cvdfinal$location_name == "Republic of Korea"] <- "Korea (Republic of)"
+#Democratic People's Republic of Korea = north korea, Republic of Korea = south korea Korea (republic of) is in gsni tables
+
+cvdfinal$location_name[cvdfinal$location_name == "Republic of Moldova"] <- "Moldova, Republic of"
+
+cvdfinal$location_name[cvdfinal$location_name == "Palestine"] <- "Palestine, State of"
+
+cvdfinal$location_name[cvdfinal$location_name == "United States of America"] <- "United States"
+
+gsni_cvd <- merge(gsni_tables, cvdfinal, by = "location_name", all = TRUE) #combine gsni and cvd mort for both sexes
+
+gsni_cvd <- na.omit(gsni_cvd, cols = "GSNI_PERIOD") #omit countries without GSNI and cvd mort
+
+
+#n=75
+
+```
+
+
+
+
+## LIFE EXPECTANCY FOR WOMEN
+
+Per country for women at birth and age 60 (?use age 60 to remove confounding of MMR)
+2000, 2010, 2015, 2019
+
+from: https://apps.who.int/gho/data/view.main.WOMENLEXv
+
+```{r}
+fle <- read_csv("data/female_life_expectancy.csv")
+fle <- as.data.table(fle)
+fle <- fle[ -1,]
+
+names(fle) <- c("location_name", "year", "LEbirth", "LE60")
+
+
+
+female_life_expectancy_split <- split(fle, fle$year)
+
+
+FLE2000 <- female_life_expectancy_split$`2000`
+setnames(FLE2000, old = c("LEbirth", "LE60"), new = c("LEbirth2000", "LE602000"))
+FLE2000[, year:= NULL]
+
+FLE2010 <- female_life_expectancy_split$`2010`
+setnames(FLE2010, old = c("LEbirth", "LE60"), new = c("LEbirth2010", "LE602010"))
+FLE2010[, year:= NULL]
+
+FLE2015 <- female_life_expectancy_split$`2015`
+setnames(FLE2015, old = c("LEbirth", "LE60"), new = c("LEbirth2015", "LE602015"))
+FLE2015[, year:= NULL]
+
+FLE2019 <- female_life_expectancy_split$`2019`
+setnames(FLE2019, old = c("LEbirth", "LE60"), new = c("LEbirth2019", "LE602019"))
+FLE2019[, year:= NULL]
+
+
+MyMerge <- function(x, y){
+  df <- merge(x, y, by= c("location_name"), all.x= TRUE, all.y= TRUE)
+  return(df)
+}
+female_life_expectancy<- Reduce(MyMerge, list(FLE2000, FLE2010, FLE2015, FLE2019))
+
+
+```
+
+```{r}
+
+#rename countries for merge
+female_life_expectancy$location_name[female_life_expectancy$location_name == "Iran (Islamic Republic of)"] <- "Iran, Islamic Republic of"
+
+female_life_expectancy$location_name[female_life_expectancy$location_name == "Republic of Korea"] <- "Korea (Republic of)"
+#Democratic People's Republic of Korea = north korea, Republic of Korea = south korea Korea (republic of) is in gsni tables 
+
+female_life_expectancy$location_name[female_life_expectancy$location_name == "Republic of Moldova"] <- "Moldova, Republic of"
+
+female_life_expectancy$location_name[female_life_expectancy$location_name == "United States of America"] <- "United States"
+
+
+gsni_cvd_lifexp <- merge(gsni_cvd, female_life_expectancy, by = "location_name", all = TRUE) 
+gsni_cvd_lifexp <- na.omit(gsni_cvd_lifexp, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+```
+
+## LIFE EXPECTANCY FOR MEN
+
+Per country for men at birth
+2000, 2010, 2015, 2019
+
+from: https://apps.who.int/gho/data/view.main.SDG2016LEXv
+
+```{r}
+mle <- read_csv("data/WHO_LE.csv")
+mle <- as.data.table(mle)
+mle <- mle[,c(1,2,4)]
+mle <- mle[-1,]
+
+names(mle) <- c("location_name", "year", "MLEbirth")
+
+
+
+male_life_expectancy_split <- split(mle, mle$year)
+
+
+mle2000 <- male_life_expectancy_split$`2000`
+setnames(mle2000, old = c("MLEbirth"), new = c("MLEbirth2000"))
+mle2000[, year:= NULL]
+
+mle2010 <- male_life_expectancy_split$`2010`
+setnames(mle2010, old = c("MLEbirth"), new = c("MLEbirth2010"))
+mle2010[, year:= NULL]
+
+mle2015 <- male_life_expectancy_split$`2015`
+setnames(mle2015, old = c("MLEbirth"), new = c("MLEbirth2015"))
+mle2015[, year:= NULL]
+
+mle2019 <- male_life_expectancy_split$`2019`
+setnames(mle2019, old = c("MLEbirth"), new = c("MLEbirth2019"))
+mle2019[, year:= NULL]
+
+
+MyMerge <- function(x, y){
+  df <- merge(x, y, by= c("location_name"), all.x= TRUE, all.y= TRUE)
+  return(df)
+}
+male_life_expectancy<- Reduce(MyMerge, list(mle2000, mle2010, mle2015, mle2019))
+
+
+```
+
+```{r}
+
+#rename countries for merge
+male_life_expectancy$location_name[male_life_expectancy$location_name == "Iran (Islamic Republic of)"] <- "Iran, Islamic Republic of"
+
+male_life_expectancy$location_name[male_life_expectancy$location_name == "Republic of Korea"] <- "Korea (Republic of)"
+#Democratic People's Republic of Korea = north korea, Republic of Korea = south korea Korea (republic of) is in gsni tables 
+
+male_life_expectancy$location_name[male_life_expectancy$location_name == "Republic of Moldova"] <- "Moldova, Republic of"
+
+male_life_expectancy$location_name[male_life_expectancy$location_name == "United States of America"] <- "United States"
+
+
+gsni_cvd_lifexpmf <- merge(gsni_cvd_lifexp, male_life_expectancy, by = "location_name", all = TRUE) 
+gsni_cvd_lifexpmf <- na.omit(gsni_cvd_lifexpmf, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+```
+
+## PHYSICIANS PER 1000
+
+from: https://data.worldbank.org/indicator/SH.MED.PHYS.ZS
+
+Didn't work when downloaded as csv but worked when downloaded as xlsx
+row 4 is year, data from 1960-2020
+last updated 17/02/2021
+
+want 2005-2017
+
+```{r}
+phys_per_1000 <- read_excel("data/physiciansper1000/API_SH.MED.PHYS.ZS_DS2_en_csv_v2_2063402.xlsx")
+phys_per_1000 <- as.data.table(phys_per_1000)
+
+#2005-2017 (very little data for 18/19) columns...50-...62
+
+phys_05_17 <- phys_per_1000 %>% select(1,50:62)
+phys_05_17 <- phys_05_17[-c(1:4),]
+
+names(phys_05_17) <- c("location_name", "phy05", "phy06", "phy07", "phy08", "phy09", "phy10", "phy11", "phy12", "phy13", "phy14", "phy15", "phy16", "phy17")
+
+```
+
+```{r}
+
+#rename countries for merge
+phys_05_17$location_name[phys_05_17$location_name == "Iran, Islamic Rep."] <- "Iran, Islamic Republic of"
+
+phys_05_17$location_name[phys_05_17$location_name == "Korea, Rep."] <- "Korea (Republic of)"
+#Democratic People's Republic of Korea = north korea, Republic of Korea = south korea Korea (republic of) is in gsni tables
+
+phys_05_17$location_name[phys_05_17$location_name == "Moldova"] <- "Moldova, Republic of"
+
+gsni_cvd_lifexp_phys <- merge(gsni_cvd_lifexpmf, phys_05_17, by = "location_name", all = TRUE) 
+gsni_cvd_lifexp_phys <- na.omit(gsni_cvd_lifexp_phys, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+```
+
+
+## HEALTH EXPENDITURE (% of GDP)
+
+from: https://data.worldbank.org/indicator/SH.XPD.CHEX.GD.ZS
+
+```{r}
+HE <- read_excel("data/API_SH.XPD.CHEX.GD.ZS_DS2_en_excel_v2_2445365.xls")
+
+
+HE1 <- HE[, c(1,50:62)]
+
+
+names(HE1) <- c("location_name", "HE05", "HE06", "HE07", "HE08", "HE09", "HE10", "HE11", "HE12", "HE13", "HE14", "HE15", "HE16", "HE17")
+
+
+#rename countries for merge
+HE1$location_name[HE1$location_name == "Iran, Islamic Rep."] <- "Iran, Islamic Republic of"
+
+HE1$location_name[HE1$location_name == "Korea, Rep."] <- "Korea (Republic of)"
+#Democratic People's Republic of Korea = north korea, Republic of Korea = south korea Korea (republic of) is in gsni tables
+
+HE1$location_name[HE1$location_name == "Moldova"] <- "Moldova, Republic of"
+
+gsni_cvd_lifexp_phys <- merge(gsni_cvd_lifexp_phys, HE1, by = "location_name", all = TRUE) 
+gsni_cvd_lifexp_phys <- na.omit(gsni_cvd_lifexp_phys, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+```
+
+
+
+## MEAN YEARS OF SCHOOLING
+
+from: https://ourworldindata.org/global-education
+up to 2017
+want 2005-2017
+
+```{r}
+mean_years_school <- read_csv("data/mean-years-of-schooling-1.csv")
+mean_years_school <- as.data.table(mean_years_school)
+
+school_split <- split(mean_years_school, mean_years_school$Year)
+
+
+scl2005 <- school_split$`2005`
+names(scl2005) <- c("location_name","code", "year", "scl05")
+scl2005 <- scl2005 %>% select(1,4)
+
+scl2006 <- school_split$`2006`
+names(scl2006)<- c("location_name","code", "year","scl06")
+scl2006 <- scl2006 %>% select(1,4)
+
+scl2007 <- school_split$`2007`
+names(scl2007)<- c("location_name","code", "year","scl07")
+scl2007 <- scl2007 %>% select(1,4)
+
+scl2008 <- school_split$`2008`
+names(scl2008)<- c("location_name","code", "year","scl08")
+scl2008 <- scl2008 %>% select(1,4)
+
+scl2009 <- school_split$`2009`
+names(scl2009)<- c("location_name","code", "year","scl09")
+scl2009 <- scl2009 %>% select(1,4)
+
+scl2010 <- school_split$`2010`
+names(scl2010)<- c("location_name","code", "year","scl10")
+scl2010 <- scl2010 %>% select(1,4)
+
+scl2011 <- school_split$`2011`
+names(scl2011)<- c("location_name","code", "year","scl11")
+scl2011 <- scl2011 %>% select(1,4)
+
+scl2012 <- school_split$`2012`
+names(scl2012)<- c("location_name","code", "year","scl12")
+scl2012 <- scl2012 %>% select(1,4)
+
+scl2013 <- school_split$`2013`
+names(scl2013)<- c("location_name","code", "year","scl13")
+scl2013 <- scl2013 %>% select(1,4)
+
+scl2014 <- school_split$`2014`
+names(scl2014) <- c("location_name", "code", "year", "scl14")
+scl2014 <- scl2014 %>% select(1,4)
+
+scl2015 <- school_split$`2015`
+names(scl2015)<- c("location_name","code", "year","scl15")
+scl2015 <- scl2015 %>% select(1,4)
+
+scl2016 <- school_split$`2016`
+names(scl2016)<- c("location_name","code", "year","scl16")
+scl2016 <- scl2016 %>% select(1,4)
+
+scl2017 <- school_split$`2017`
+names(scl2017)<- c("location_name","code", "year","scl17")
+scl2017 <- scl2017 %>% select(1,4)
+
+MyMerge <- function(x, y){
+  df <- merge(x, y, by= c("location_name"), all.x= TRUE, all.y= TRUE)
+  return(df)
+}
+scl0517 <- Reduce(MyMerge, list(scl2005, scl2006, scl2007, scl2008, scl2009, scl2010, scl2011, scl2012, scl2013, scl2014, scl2015, scl2016, scl2017))
+
+
+```
+
+```{r}
+
+#rename columns 
+mean_years_school$location_name[mean_years_school$location_name == "Iran"] <- "Iran, Islamic Republic of"
+mean_years_school$location_name[mean_years_school$location_name == "South Korea"] <- "Korea (Republic of)"
+
+mean_years_school$location_name[mean_years_school$location_name == "Moldova"] <- "Moldova, Republic of"
+
+mean_years_school$location_name[mean_years_school$location_name == "Palestine"] <- "Palestine, State of"
+
+
+gsni_cvd_lifexp_phys_sch <- merge(gsni_cvd_lifexp_phys, scl0517, by = "location_name", all = TRUE) 
+gsni_cvd_lifexp_phys_sch <- na.omit(gsni_cvd_lifexp_phys_sch, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+```
+
+## GDP
+
+GDP per capita (current US dollar)
+
+from: https://data.worldbank.org/indicator/NY.GDP.PCAP.CD
+
+```{r}
+library(readxl)
+GDPpercapita <- read_excel("data/GDPpercapita.xls")
+GDPpercapita <- as.data.table(GDPpercapita)
+
+
+#2005-2017 
+
+GDP0517 <- GDPpercapita %>% select(1,50:62)
+GDP0517 <- GDP0517[-c(1:3),]
+
+names(GDP0517) <- c("location_name", "GDP05", "GDP06", "GDP07", "GDP08", "GDP09", "GDP10", "GDP11", "GDP12", "GDP13", "GDP14", "GDP15", "GDP16", "GDP17")
+
+
+```
+
+```{r}
+
+#rename columns 
+GDPpercapita$location_name[GDPpercapita$location_name == "Iran, Islamic Rep."] <- "Iran, Islamic Republic of"
+
+GDPpercapita$location_name[GDPpercapita$location_name == "Korea, Rep."] <- "Korea (Republic of)"
+
+GDPpercapita$location_name[GDPpercapita$location_name == "Moldova"] <- "Moldova, Republic of"
+
+
+gsni_cvd_lifexp_phys_sch_gdp <- merge(gsni_cvd_lifexp_phys_sch, GDP0517, by = "location_name", all = TRUE) 
+gsni_cvd_lifexp_phys_sch_gdp <- na.omit(gsni_cvd_lifexp_phys_sch_gdp, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+
+
+```
+
+
+
+
+
+
+## MATERNAL MORTALITY RATIO
+
+from: https://data.worldbank.org/indicator/SH.STA.MMRT
+
+```{r}
+MMR <- read_excel("data/API_SH.STA.MMRT_DS2_en_excel_v2_2056748.xls")
+MMR <- as.data.table(MMR)
+
+#2005-2017 
+
+MMR0517 <- MMR %>% select(1,50:62)
+MMR0517 <- MMR0517[-c(1:3),]
+
+names(MMR0517) <- c("location_name", "MMR05", "MMR06", "MMR07", "MMR08", "MMR09", "MMR10", "MMR11", "MMR12", "MMR13", "MMR14", "MMR15", "MMR16", "MMR17")
+```
+
+```{r}
+#rename columns 
+MMR0517$location_name[MMR0517$location_name == "Iran, Islamic Rep."] <- "Iran, Islamic Republic of"
+
+MMR0517$location_name[MMR0517$location_name == "Korea, Rep."] <- "Korea (Republic of)"
+
+MMR0517$location_name[MMR0517$location_name == "Moldova"] <- "Moldova, Republic of"
+
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr <- merge(gsni_cvd_lifexp_phys_sch_gdp, MMR0517, by = "location_name", all = TRUE) 
+gsni_cvd_lifexp_phys_sch_gdp_mmr <- na.omit(gsni_cvd_lifexp_phys_sch_gdp_mmr, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+
+
+
+```
+
+##COUNTRY INCOME LEVEL
+
+from: https://datahelpdesk.worldbank.org/knowledgebase/articles/906519-world-bank-country-and-lending-groups (historical classification by income)
+
+```{r}
+LMH <- read_excel("data/OGHIST.xls", sheet = 3)
+LMH <- as.data.table(LMH)
+
+LMH1 <- LMH[5:228, c(2, 25, 30)] #extract required data
+
+LMH2 <- LMH1[-c(2:6), ]
+
+#LMH09 and LMH14 = world bank classification in 2009 & 2014 using GNI per capita 
+setnames(LMH2, "...25", "LMH09") 
+setnames(LMH2, "...30", "LMH14")
+setnames(LMH2,"World Bank Analytical Classifications", "location_name")
+
+LMH2 <- LMH2[-1,]
+
+#rename columns 
+LMH2$location_name[LMH2$location_name == "Iran, Islamic Rep."] <- "Iran, Islamic Republic of"
+LMH2$location_name[LMH2$location_name == "Korea, Rep."] <- "Korea (Republic of)"
+LMH2$location_name[LMH2$location_name == "Moldova"] <- "Moldova, Republic of"
+
+#merge with table
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh <- merge(gsni_cvd_lifexp_phys_sch_gdp_mmr, LMH2, by = "location_name", all = TRUE) 
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh <- na.omit(gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh, cols = "GSNI_PERIOD") #omit countries without GSNI
+
+head(gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh)
+na.omit(gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh, c("LMH09", "LMH14"), invert = TRUE)
+
+
+```
+
+```{r}
+LMH[c(118, 223, 226, 225),]
+
+#Kyrgzstan, viet nam and yemen are low middle income (names didn't sync)
+```
+
+
+
+###as.numeric
+```{r}
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, twobias := as.numeric(twobias)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, twobias := as.numeric(twobias)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, onebias := as.numeric(onebias)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, nobias := as.numeric(nobias)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, political:= as.numeric(political)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, economic:= as.numeric(economic)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, educational:= as.numeric(educational)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, physical := as.numeric(physical)]
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LEbirth2000 := as.numeric(LEbirth2000)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LEbirth2010 := as.numeric(LEbirth2010)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LEbirth2015 := as.numeric(LEbirth2015)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LEbirth2019 := as.numeric(LEbirth2019)]
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MLEbirth2000 := as.numeric(MLEbirth2000)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MLEbirth2010 := as.numeric(MLEbirth2010)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MLEbirth2015 := as.numeric(MLEbirth2015)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MLEbirth2019 := as.numeric(MLEbirth2019)]
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LE602000 := as.numeric(LE602000)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LE602010 := as.numeric(LE602010)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LE602015 := as.numeric(LE602015)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LE602019 := as.numeric(LE602019)]
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP05 := as.numeric(GDP05)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP06 := as.numeric(GDP06)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP07 := as.numeric(GDP07)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP08 := as.numeric(GDP08)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP09 := as.numeric(GDP09)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP10 := as.numeric(GDP10)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP11 := as.numeric(GDP11)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP12 := as.numeric(GDP12)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP13 := as.numeric(GDP13)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP14 := as.numeric(GDP14)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP15 := as.numeric(GDP15)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP16 := as.numeric(GDP16)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GDP17 := as.numeric(GDP17)]
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR05 := as.numeric(MMR05)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR06 := as.numeric(MMR06)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR07 := as.numeric(MMR07)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR08 := as.numeric(MMR08)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR09 := as.numeric(MMR09)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR10 := as.numeric(MMR10)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR11 := as.numeric(MMR11)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR12 := as.numeric(MMR12)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR13 := as.numeric(MMR13)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR14 := as.numeric(MMR14)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR15 := as.numeric(MMR15)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR16 := as.numeric(MMR16)]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, MMR17 := as.numeric(MMR17)]
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LMH09 := factor(LMH09, 
+                           levels = c("L", "LM", "UM", "H"),
+                           labels = c("low income", "lower middle income", "upper middle income", "high income")
+                      )]
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, LMH14 := factor(LMH14, 
+                           levels = c("L", "LM", "UM", "H"),
+                           labels = c("low income", "lower middle income", "upper middle income", "high income")
+                      )]
+
+```
+
+
+```{r}
+
+glimpse(gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh)
+```
+
+Create columns - ratio of female to male CVD for CVD14 and CVD17 
+
+```{r}
+
+gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, `:=` (cvdratio14 = cvd14fem / cvd14male,
+                                             cvdratio17 = cvd17fem /cvd17male)]
+
+```
+
+##examine missing values and insert replacements
+ 
+###2014
+```{r}
+
+#examine NAs for 2014
+edit <- cbind(gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh) #make new table for editing (cbind) means a duplicate will be made otherwise changing 'edit' will also change the gsni table
+
+
+na.omit(edit, c("cvd14fem", "cvd14male", "cvd14both", "LEbirth2015", "MLEbirth2015", "cvdratio14",  "phy14", "scl14", "GDP14", "MMR14"), invert = TRUE) #28 rows with one missing value for 2014
+
+
+edit
+```
+
+####cvd14fem
+```{r}
+na.omit(edit, c("cvd14fem"), invert = TRUE) #missing cvdfem -> no missing
+
+```
+
+####cvd14male
+```{r}
+na.omit(edit, c("cvd14male"), invert=TRUE) #no missing
+```
+
+####cvd14
+```{r}
+na.omit(edit, c("cvd14both"), invert = TRUE) #missing cvdboth -> no missing
+
+```
+
+####cvdratio14
+```{r}
+na.omit(edit, c("cvdratio14"), invert = TRUE) #missing cvdboth -> no missing
+
+```
+
+
+####LEbirth2015
+```{r}
+na.omit(edit, c("LEbirth2015"), invert = TRUE) #missing LE at birth (Andorra, Palestine and UK)
+```
+
+```{r}
+
+edit[c("Andorra", "Palestine, State of", "United Kingdom"), c("location_name", "LEbirth2000", "LEbirth2010", "LEbirth2015", "LEbirth2019")]
+
+#no data points that can be used to fill LE at birth for these countries
+```
+Have data for UK from IHME from 2015 https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for females 2015 = 84.8
+
+```{r}
+
+edit$LEbirth2015[68] <- 82.83 #inserted UK value
+
+edit[68,LEbirth2015]
+
+```
+
+Have data for Andorra from IHME from 2015 https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for females 2015 = 84.8
+
+```{r}
+edit$LEbirth2015[2] <- 84.8 #inserted Andorra value
+
+edit[2,LEbirth2015]
+```
+
+Have data for Palestine from IHME from 2015 https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for females 2015 = 76.22
+```{r}
+edit$LEbirth2015[48] <- 76.22 #inserted Palestine value
+
+edit[48,LEbirth2015]
+```
+
+####MLE2015
+```{r}
+na.omit(edit, c("MLEbirth2015"), invert = TRUE) #missing LE at birth (Andorra, Palestine and UK)
+
+
+edit[c("Andorra", "Palestine, State of", "United Kingdom"), c("location_name", "MLEbirth2000", "MLEbirth2010", "MLEbirth2015", "MLEbirth2019")] 
+```
+
+Have data for UK from IHME from 2015 https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for males 2015 in UK = 79.22
+
+```{r}
+
+edit$MLEbirth2015[68] <- 79.22 #inserted UK value
+
+edit[68,MLEbirth2015]
+
+```
+
+Have data for Andorra from IHME from 2015 https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for males 2015 = 79.56
+
+```{r}
+edit$MLEbirth2015[2] <- 79.56 #inserted Andorra value
+
+edit[2,MLEbirth2015]
+```
+
+Have data for Palestine from IHME from 2015 https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for males 2015 = 72.46
+```{r}
+edit$MLEbirth2015[48] <- 72.46 #inserted Palestine value
+
+edit[48,MLEbirth2015]
+```
+
+
+####phy14
+```{r}
+na.omit(edit, c("phy14"), invert = TRUE) #missing phy (23 rows)
+```
+```{r}
+
+naphy <- edit[, c("location_name", "phy09","phy10", "phy11", "phy12", "phy13", "phy14", "phy15", "phy16", "phy17")]
+naphy #physican columns 09-17
+
+na.omit(naphy, c("phy14"), invert = TRUE) #able to see if can replace values
+
+
+```
+
+REPLACE
+
+Algeria	-2016
+Andorra		- 2015
+Argentina	- 2013
+Brazil	- 2013
+Ecuador	- 2015
+Ethiopia	- 2016
+Ghana	- 2013
+Haiti - 2015
+Indonesia	- 2015
+Kyrgyzsta - NA
+Malaysia	- 2015
+Mali	- 2016
+Nigeria		- 2013
+Palestine, State of		-NA
+Peru - 2016		
+Philippines - 2017
+Romania	- 2013
+Thailand	- 2015	
+Trinidad and Tobago	- 2015
+Uruguay - 2016
+Viet Nam	- NA
+Yemen	- NA
+Zambia	- 2016
+```{r}
+#need to create table with missing phy14 values in one column the can use rows_patch to insert new values
+
+Algeriaphy <- edit["Algeria", c("location_name", "phy16")]
+Andorraphy <- edit["Andorra", c("location_name", "phy15")]
+Argentinaphy <- edit["Argentina", c("location_name", "phy13")]
+Brazilphy <- edit["Brazil", c("location_name", "phy13")]
+Ecuadorphy <- edit["Ecuador", c("location_name", "phy15")]
+Ethiopiaphy	<- edit["Ethiopia", c("location_name", "phy16")]
+Ghanaphy <- edit["Ghana", c("location_name", "phy13")]	
+Haitiphy <- edit["Haiti", c("location_name", "phy15")]
+Indonesiaphy	<- edit["Indonesia", c("location_name", "phy15")]
+#Kyrgyzsta - NA
+Malaysiaphy	<- edit["Malaysia", c("location_name", "phy15")]
+Maliphy	<- edit["Mali", c("location_name", "phy16")]
+Nigeriaphy		<- edit["Nigeria", c("location_name", "phy13")]
+#Palestine, State of		-NA
+Peruphy <- edit["Peru", c("location_name", "phy16")]	
+Philippinesphy <- edit["Philippines", c("location_name", "phy17")]
+Romaniaphy	<- edit["Romania", c("location_name", "phy13")]
+Thailandphy	<- edit["Thailand", c("location_name", "phy15")]
+TrinidadandTobagophy	<- edit["Trinidad and Tobago", c("location_name", "phy15")]
+Uruguayphy <- edit["Uruguay", c("location_name", "phy16")]	
+#Viet Nam	- NA
+#Yemen	- NA
+Zambiaphy <-	edit["Zambia", c("location_name", "phy16")]	
+
+
+phy14edit <- rbind(Algeriaphy, Andorraphy, Argentinaphy, Brazilphy, Ecuadorphy, Ethiopiaphy, Ghanaphy, Haitiphy, Indonesiaphy, Malaysiaphy, Maliphy, Nigeriaphy, Peruphy, Philippinesphy, Romaniaphy, Thailandphy, TrinidadandTobagophy, Uruguayphy,Zambiaphy,   use.names=FALSE)
+setnames(phy14edit, "phy16", "phy14edit") #new table with values to insert into the phy14 column
+```
+
+```{r}
+setnames(edit, "phy14", "phy14edit")
+
+edit_phy14 <- rows_patch(edit, phy14edit)
+edit_phy14[,c("location_name", "phy14edit")]
+na.omit(edit_phy14, "phy14edit", invert=TRUE)
+
+#table "edit_phy14" now has column "phy14edit" which has inserted values from other years
+# 4 NAs in total for phy
+```
+
+
+
+
+
+####scl14
+
+```{r}
+na.omit(edit_phy14, c("scl14"), invert = TRUE) # 6 missing scl 2014
+
+nascl <- edit_phy14[, c("location_name", "scl05", "scl06", "scl07", "scl08", "scl09","scl10", "scl11", "scl12", "scl13", "scl14", "scl15", "scl16", "scl17")]
+nascl #scl columns 09-17
+
+na.omit(nascl, c("scl14"), invert = TRUE) #able to see if can replace values, can't replace with any , still 6 NAs
+
+```
+SCL no values
+Iran, Islamic Republic of	NA	
+Korea (Republic of)	NA	
+Moldova, Republic of	NA		
+Palestine, State of	NA
+Russian Federation NA
+Viet Nam NA
+
+
+####GDP14
+```{r}
+na.omit(edit_phy14, c("GDP14"), invert = TRUE) # 7 missing GDP2014
+
+naGDP <- edit_phy14[, c("location_name", "GDP05", "GDP06", "GDP07", "GDP08", "GDP09","GDP10", "GDP11", "GDP12", "GDP13", "GDP14", "GDP15", "GDP16", "GDP17")]
+naGDP #GDP columns 09-17
+
+na.omit(naGDP, c("GDP14"), invert = TRUE) #able to see if can replace values, can't replace with any , still 7 NAs
+
+```
+GDP (no values)
+Iran, Islamic Republic of	NA	
+Korea (Republic of)	NA	
+Kyrgyzstan	NA	
+Moldova, Republic of	NA	
+Palestine, State of	NA	
+Viet Nam	NA		
+Yemen NA
+
+####MMR14
+```{r}
+na.omit(edit_phy14, c("MMR14"), invert = TRUE) # 5 missing MMR2014
+
+naMMR <- edit_phy14[, c("location_name", "MMR05", "MMR06", "MMR07", "MMR08", "MMR09","MMR10", "MMR11", "MMR12", "MMR13", "MMR14", "MMR15", "MMR16", "MMR17")]
+naMMR #MMR columns 09-17
+
+na.omit(naMMR, c("MMR14"), invert = TRUE) #able to see if can replace values, can't replace any
+
+```
+MMR NAs (no values)
+Andorra	NA	
+Kyrgyzstan	NA	
+Palestine, State of	NA
+Viet Nam	NA
+Yemen NA
+
+
+####final14
+```{r}
+analysisratio14 <- edit_phy14[, c("location_name", "GSNI_PERIOD", "twobias","cvd14fem", "cvd14male", "cvd14both", "cvdratio14" , "LEbirth2015", "MLEbirth2015", "phy14edit", "scl14", "GDP14", "MMR14")]
+glimpse(analysisratio14)
+# table name = analysis14
+```
+```{r}
+na.omit(analysisratio14, c("cvd14fem", "cvd14male", "cvd14both", "cvdratio14" , "LEbirth2015", "MLEbirth2015", "phy14edit", "scl14", "GDP14", "MMR14"), invert = TRUE)
+
+#now have 9 rows with missing data 
+```
+
+
+ 
+###2017
+```{r}
+
+#examine NAs for 2017
+edit17 <- cbind(gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh)
+
+na.omit(edit17, c("cvd17fem","cvd14male","cvdratio17", "cvd17both", "LEbirth2019", "MLEbirth2019", "phy17", "scl17", "GDP17", "MMR17"), invert = TRUE) #30 rows with one missing value for 2017
+
+```
+
+####cvd17fem
+```{r}
+na.omit(edit17, c("cvd17fem"), invert = TRUE) #missing cvdfem -> no missing
+
+```
+
+####cvd14male
+```{r}
+na.omit(edit17, c("cvd17male"), invert = TRUE) #missing cvdmale -> no missing
+
+```
+
+####cvdratio17
+```{r}
+na.omit(edit17, c("cvdratio17"), invert = TRUE) #-> no missing
+
+```
+
+####cvd17
+```{r}
+na.omit(edit17, c("cvd17both"), invert = TRUE) #missing cvdboth -> no missing
+
+```
+####LEbirth2019
+```{r}
+na.omit(edit17, c("LEbirth2015"), invert = TRUE) #missing LE at birth (Andorra, Palestine and UK)
+```
+
+```{r}
+
+edit17[c("Andorra", "Palestine, State of", "United Kingdom"), c("location_name", "LEbirth2000", "LEbirth2010", "LEbirth2015", "LEbirth2019")]
+
+#no data points that can be used to fill LE at birth for these countries
+```
+Can add in data from IMHE https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for females 2019 
+UK[68] = 82.88
+Andorra[2]= 84.95
+Palestine[48] = 76.47
+
+
+```{r}
+edit17$LEbirth2019[68] <- 82.88
+edit17$LEbirth2019[2] <- 84.95
+edit17$LEbirth2019[48] <- 76.47
+
+edit17[c("Andorra", "Palestine, State of", "United Kingdom"), c("location_name", "LEbirth2000", "LEbirth2010", "LEbirth2015", "LEbirth2019")]
+
+```
+
+####MLEbirth2019
+```{r}
+na.omit(edit17, c("MLEbirth2015"), invert = TRUE) #missing LE at birth (Andorra, Palestine and UK)
+```
+
+```{r}
+
+edit17[c("Andorra", "Palestine, State of", "United Kingdom"), c("location_name", "MLEbirth2000", "MLEbirth2010", "MLEbirth2015", "MLEbirth2019")]
+
+#no data points that can be used to fill LE at birth for these countries
+```
+Can add in data from IMHE https://vizhub.healthdata.org/gbd-compare/le
+LE at birth for males 2019 
+UK[68] = 79.24
+Andorra[2]= 79.8
+Palestine[48] = 73.19
+
+
+```{r}
+edit17$MLEbirth2019[68] <- 79.24
+edit17$MLEbirth2019[2] <- 79.8
+edit17$MLEbirth2019[48] <- 73.19
+
+edit17[c("Andorra", "Palestine, State of", "United Kingdom"), c("location_name", "MLEbirth2000", "MLEbirth2010", "MLEbirth2015", "MLEbirth2019")]
+
+```
+
+
+####phy17
+```{r}
+na.omit(edit17, c("phy17"), invert = TRUE) #missing phy (26 rows)
+```
+
+
+
+```{r}
+
+naphy17 <- edit17[, c("location_name", "phy09","phy10", "phy11", "phy12", "phy13", "phy14", "phy15", "phy16", "phy17")]
+naphy17 #physican columns 09-17
+
+na.omit(naphy17, c("phy17"), invert = TRUE) #able to see if can replace values
+
+
+```
+
+REPLACE
+
+```{r}
+Andorra	<- edit17["Andorra", c("location_name", "phy15")]
+Azerbaijan	<- edit17["Azerbaijan", c("location_name", "phy14")]
+Belarus	<- edit17["Belarus", c("location_name", "phy15")]
+Bulgaria	<- 	edit17["Bulgaria", c("location_name", "phy15")]
+Cyprus	<- edit17["Cyprus", c("location_name", "phy16")]
+Ecuador <- edit17["Ecuador", c("location_name", "phy16")]
+Finland		<- edit17["Finland", c("location_name", "phy16")]
+Haiti		<-	edit17["Haiti", c("location_name", "phy15")]
+Japan		<- edit17["Japan", c("location_name", "phy16")]
+Kazakhstan	<- edit17["Kazakhstan", c("location_name", "phy14")]
+Kuwait	<-	edit17["Kuwait", c("location_name", "phy15")]
+#Kyrgyzstan		<- NA
+Malaysia		<- edit17["Malaysia", c("location_name", "phy15")]
+Mali		<- edit17["Mali", c("location_name", "phy16")]
+Nigeria		<- edit17["Nigeria", c("location_name", "phy16")]
+#Palestine, State of			<- NA
+Peru		<- edit17["Peru", c("location_name", "phy16")]
+RussianFederation	<- edit17["Russian Federation", c("location_name", "phy16")]
+Serbia		<- edit17["Serbia", c("location_name", "phy16")]
+Singapore	<- edit17["Singapore", c("location_name", "phy16")]
+Sweden		<- edit17["Sweden", c("location_name", "phy16")]
+Ukraine		<- edit17["Ukraine", c("location_name", "phy14")]
+Uzbekistan		<- edit17["Uzbekistan", c("location_name", "phy14")]
+#Viet Nam	<- NA
+#Yemen		<- NA
+Zambia	<- edit17["Zambia", c("location_name", "phy16")]
+```
+
+need to create table with missing phy14 values in one column the can use rows_patch to insert new values
+
+```{r}
+phy17edit <- rbind(Andorra,
+Azerbaijan,
+Belarus	,
+Bulgaria	,
+Cyprus	,
+Ecuador ,
+Finland		,
+Haiti	,
+Japan		,
+Kazakhstan	,
+Kuwait	,
+Malaysia	,
+Mali	,
+Nigeria		,
+Peru		,
+RussianFederation,
+Serbia	,
+Singapore	,
+Sweden	,
+Ukraine	,
+Uzbekistan	,
+Zambia	,
+use.names=FALSE)
+
+setnames(phy17edit, "phy15", "phy17edit") #new table with values to insert into the phy14 column
+phy17edit
+```
+
+
+
+```{r}
+setnames(edit17, "phy17", "phy17edit")
+
+edit_phy17 <- rows_patch(edit17, phy17edit)
+edit_phy17[,c("location_name", "phy17edit")]
+na.omit(edit_phy17, "phy17edit", invert=TRUE)
+
+#table "edit_phy17" now has column "phy17edit" which has inserted values from other years
+# 4 NAs in total for phy
+
+```
+
+
+
+
+####scl17
+
+```{r}
+na.omit(edit_phy17, c("scl17"), invert = TRUE) # 6 missing scl 2017
+
+nascl <- edit_phy17[, c("location_name", "scl05", "scl06", "scl07", "scl08", "scl09","scl10", "scl11", "scl12", "scl13", "scl14", "scl15", "scl16", "scl17")]
+nascl #scl columns 09-17
+
+na.omit(nascl, c("scl17"), invert = TRUE) #able to see if can replace values, can't replace with any , still 6 NAs
+
+
+```
+SCL no values
+Iran, Islamic Republic of	NA	
+Korea (Republic of)	NA	
+Moldova, Republic of	NA		
+Palestine, State of	NA
+Russian Federation NA
+Viet Nam NA
+
+
+####GDP17
+```{r}
+na.omit(edit_phy17, c("GDP17"), invert = TRUE) # 7 missing GDP2017
+
+naGDP <- edit_phy17[, c("location_name", "GDP05", "GDP06", "GDP07", "GDP08", "GDP09","GDP10", "GDP11", "GDP12", "GDP13", "GDP14", "GDP15", "GDP16", "GDP17")]
+naGDP #GDP columns 09-17
+
+na.omit(naGDP, c("GDP17"), invert = TRUE) #able to see if can replace values, can't replace with any , still 7 NAs
+
+```
+GDP (no values)
+Iran, Islamic Republic of	NA	
+Korea (Republic of)	NA	
+Kyrgyzstan	NA	
+Moldova, Republic of	NA	
+Palestine, State of	NA	
+Viet Nam	NA		
+Yemen NA
+
+####MMR17
+```{r}
+na.omit(edit_phy17, c("MMR17"), invert = TRUE) # 5 missing MMR2017
+
+naMMR <- edit_phy17[, c("location_name", "MMR05", "MMR06", "MMR07", "MMR08", "MMR09","MMR10", "MMR11", "MMR12", "MMR13", "MMR14", "MMR15", "MMR16", "MMR17")]
+naMMR #MMR columns 09-17
+
+na.omit(naMMR, c("MMR17"), invert = TRUE) #able to see if can replace values, can't replace any
+
+```
+MMR NAs (no values)
+Andorra	NA	
+Kyrgyzstan	NA	
+Palestine, State of	NA
+Viet Nam	NA
+Yemen NA
+
+
+####final17
+```{r}
+
+analysisratio17 <- edit_phy17[, c("location_name", "GSNI_PERIOD", "twobias", "cvd17fem", "cvd17male", "cvdratio17", "cvd17both", "LEbirth2019", "MLEbirth2019", "phy17edit", "scl17", "GDP17", "MMR17")]
+glimpse(analysisratio17)
+# table name = analysisratio17
+
+
+na.omit(edit_phy17, c("twobias", "cvd17fem", "cvd17male", "cvdratio17", "cvd17both", "LEbirth2019", "MLEbirth2019", "phy17edit", "scl17", "GDP17", "MMR17"), invert = TRUE) 
+
+#now have 9 rows with one missing 
+
+```
+
+
+
+
+```{r}
+write.csv(analysisratio14,"analysisratio14.csv")
+write.csv(analysisratio17,"analysisratio17.csv")
+```
+
+
+
+```{r}
+
+countrylist <- cbind(edit[, c("location_name", "LMH14")])
+countrylist
+write.csv(countrylist, "countrylist.csv")
+
+countrylist75 <- cbind(gsni_cvd_lifexp_phys_sch_gdp_mmr_lmh[, c("location_name", "LMH14")])
+countrylist75
+write.csv(countrylist75, "countrylist75.csv")
+```
+
+

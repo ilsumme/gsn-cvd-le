@@ -1,0 +1,233 @@
+---
+title: "GSNI change over time"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+How fast to GSNI change over time?
+
+```{r}
+library(readxl)
+library(data.table)
+library(tidyverse)
+library(skimr)
+library(ggplot2)
+library(readr)
+```
+
+```{r}
+results14 <- read_csv("analysis14.csv")
+setDT(results14)
+
+results14[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+results14[, X1:= NULL]
+
+trend <- read_excel("gsni_tables.xlsx", 3)
+trend <- as.data.table(trend)
+```
+
+```{r}
+trend <- trend[, c(1,4,5)]
+glimpse(trend)
+```
+
+```{r}
+names(trend) <- c("country", "time1", "time2")
+
+#time 1 = 2005-09 collection 
+#time 2 = 2010-14 collection
+
+trend <- trend[8:38,] 
+
+glimpse(trend)
+
+```
+
+
+
+```{r}
+
+trend[, time1 := as.numeric(time1)]
+trend[, time2 := as.numeric(time2)]
+
+glimpse(trend)
+```
+
+inspect means and boxplot
+
+  
+```{r}
+
+trend[, boxplot(time1, time2)]
+
+
+trend[ , mean(time1, na.rm=TRUE)]
+
+trend[ , mean(time2, na.rm=TRUE)]
+
+trend %>%
+  summarize(mean(time1),  sd(time1), mean(time2), sd(time2))
+```
+
+
+check normality 
+
+```{r}
+trend[, hist(time1)]
+
+shapiro.test(trend$time1)
+
+#time1 normally distributed
+
+
+trend[, hist(time2)]
+
+shapiro.test(trend$time2)
+
+#time1 and 2 normally distributed therefore can use a t test
+```
+
+
+```{r}
+
+var.test(trend$time1, trend$time2, alternative= "two.sided")
+
+#ftest pvalue >0.05 therefore variances equal
+
+```
+
+#paired t.test (variables both normally distributed and equal variances)
+
+```{r}
+
+#paired t-test as same countries
+
+trend[, t.test(time1, time2, paired= TRUE, var.equal=TRUE)]
+
+glimpse(trend)
+
+#no sig difference
+```
+
+
+
+
+
+#boxplot expermimentation
+```{r}
+trendbox <- trend
+names(trendbox) <- c("country", "2005-2009", "2010-2014")
+
+library(reshape) #for ggplot need to melt the data so all numberic in one column
+
+melt(trendbox)
+
+trendboxmelt <- reshape::melt(trendbox) #code in one line
+
+
+
+glimpse(trendboxmelt)
+```
+
+
+```{r}
+b <- ggplot(trendboxmelt, aes(x=variable, y = value, color = variable)) +
+         geom_boxplot(notch=FALSE) + #if notch=TRUE and notches don't overlap good chance medians differ (notches display the confidence intervals around the medians)
+stat_summary(fun= mean, geom = "point", shape = 23, size = 15) + #displayes the means as a diamond
+geom_jitter(shape=16, size = 1, position = position_jitter(0.1)) +#adds in points, the jitter randomly varies the position along x axis
+labs(title = "GSNI values by time period", x = "GSNI collection time period", y= "GSNI value (2 bias)")+
+theme(legend.position = "none") #remove legend
+b
+
+#n=31
+
+
+```
+
+
+
+
+```{r}
+
+#customise colours
+
+b+scale_color_manual(values= c('Purple4', 'DarkSalmon'))
+
+#to fill box with colour need to change code at the beginning
+ggplot(trendboxmelt, aes(x=variable, y = value, fill = variable)) +
+         geom_boxplot(notch=FALSE) +
+stat_summary(fun= mean, geom = "point", shape = 23, size = 15) + 
+geom_jitter(shape=16, size = 1, position = position_jitter(0.1))+
+  scale_fill_brewer(palette="Dark2")+#personalise colours, can also use scale_fill_manual as above
+theme(legend.position = "none")
+
+ggplot(trendboxmelt, aes(x=variable, y = value, fill = variable)) +
+         geom_boxplot(notch=FALSE) +
+stat_summary(fun= mean, geom = "point", shape = 23, size = 15) + 
+geom_jitter(shape=16, size = 1, position = position_jitter(0.1))+
+  scale_fill_grey() + theme_classic()#grey scale
+
+
+```
+
+
+```{r}
+
+
+ggplot(trendboxmelt, aes(x=variable, y = value, fill = country)) +
+         geom_boxplot() #doesnt work with this data but say had two groups of countries could use the fill = to separate them in the box plot
+
+
+
+```
+
+
+
+
+
+```{r}
+trendboxmelt %>%
+  group_by(variable) %>%
+summarize(median(value))
+
+
+```
+
+## Compare all countries that were collected at each time period n = 75
+
+```{r}
+ggplot(results14, aes(x= GSNI_PERIOD, y = twobias, color = GSNI_PERIOD)) +
+         geom_boxplot(notch=FALSE) + #if notch=TRUE and notches don't overlap good chance medians differ (notches display the confidence intervals around the medians)
+stat_summary(fun= mean, geom = "point", shape = 23, size = 15) + #displayes the means as a diamond
+geom_jitter(shape=16, size = 1, position = position_jitter(0.1)) +#adds in points, the jitter randomly varies the position along x axis
+labs(title = "GSNI values by time period", x = "GSNI collection time period", y= "GSNI2 (%)")+
+theme(legend.position = "none") 
+
+#n=75
+```
+
+check assumptions
+```{r}
+p1 <- results14[GSNI_PERIOD == "2005–2009", twobias]
+hist(p1)
+shapiro.test(p1) #evidence that normally distributed
+
+p2 <- results14[GSNI_PERIOD == "2010–2014", twobias]
+hist(p2)
+shapiro.test(p2) #evidence that not normally distributed 
+
+wilcox.test(p1,p2,paired=FALSE
+            )
+
+#pvalue <0.05 therefore the groups differ significantly, collection in 2010-20014 has a stat sig higher GSNI value (different countries)
+```
+
+
+
+
+

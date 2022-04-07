@@ -1,0 +1,649 @@
+---
+title: "final-condensed-results"
+output: github_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(qwraps2)
+options(qwraps2_markup = "markdown")
+library(readr)
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(skimr)
+library(tidyverse)
+library(broom)
+library(knitr)
+library(SmartEDA)
+library(performance)
+library(see)
+library(stargazer)
+library(cowplot)
+
+```
+
+```{r include=FALSE}
+
+results14 <- read_csv("analysisratio14.csv")
+setDT(results14)
+
+results14[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+results14[,"...1":= NULL]
+
+results17 <- read_csv("analysisratio17.csv")
+setDT(results17)
+
+results17[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+results17[,"...1":= NULL]
+
+```
+
+
+
+## Results
+
+```{r}
+finalsummary <-
+  list("GSNI index 2 or more bias" =
+       list("min"       = ~ round(min(twobias),1),
+            "max"       = ~ round(max(twobias),1),
+            "median (IQR)" = ~ median_iqr(twobias),
+        "missing" = ~sum(is.na(twobias))),
+       "Female CVD age adjusted mortality rate (per 100 000 population)" =
+       list("min"       = ~ round(min(cvd14fem),1),
+            "max"       = ~ round(max(cvd14fem),1),
+            "median (IQR)" = ~ median_iqr(cvd14fem),
+             "missing" = ~sum(is.na(cvd14fem))),
+       "Male CVD age adjusted mortality rate (per 100 000 population)" =
+       list("min"       = ~ round(min(cvd14male),1),
+            "max"       = ~ round(max(cvd14male),1),
+            "median (IQR)" = ~ median_iqr(cvd14male),
+             "missing" = ~sum(is.na(cvd14male))),
+       "Population CVD age adjusted mortality rate (per 100 000 population)" =
+       list("min"       = ~ round(min(cvd14both),1),
+            "max"       = ~ round(max(cvd14both),1),
+            "median (IQR)" = ~ median_iqr(cvd14both),
+             "missing" = ~sum(is.na(cvd14both))),
+       "Ratio of female to male CVD mortality rates" =
+       list("min"       = ~ round(min(cvdratio14),1),
+            "max"       = ~ round(max(cvdratio14),1),
+            "median (IQR)" = ~ median_iqr(cvdratio14),
+             "missing" = ~sum(is.na(cvdratio14))),
+       "Female life expectancy at birth" =
+       list("min"       = ~ round(min(LEbirth2015),1),
+            "max"       = ~ round(max(LEbirth2015),1),
+            "median (IQR)" = ~ median_iqr(LEbirth2015),
+             "missing" = ~sum(is.na(LEbirth2015))),
+        "Male life expectancy at birth" =
+       list("min"       = ~ round(min(MLEbirth2015),1),
+            "max"       = ~ round(max(MLEbirth2015),1),
+            "median (IQR)" = ~ median_iqr(MLEbirth2015),
+             "missing" = ~sum(is.na(MLEbirth2015))),
+       "Physicians per 1000 population" =
+       list("min"       = ~ round(min(phy14edit, na.rm= TRUE),1), 
+            "max"       = ~ round(max(phy14edit, na.rm= TRUE),1), 
+            "median (IQR)" = ~ median_iqr(phy14edit, na_rm = TRUE),
+             "missing" = ~sum(is.na(phy14edit))),
+       "GDP per capita" =
+       list("min"       = ~ round(min(GDP14, na.rm= TRUE),1),
+            "max"       = ~ round(max(GDP14, na.rm= TRUE),1),
+            "median (IQR)" = ~ median_iqr(GDP14, na_rm = TRUE),
+             "missing" = ~sum(is.na(GDP14))),
+        "Maternal Mortality Ratio" =
+       list("min"       = ~ round(min(MMR14, na.rm= TRUE),1),
+            "max"       = ~ round(max(MMR14, na.rm= TRUE),1),
+            "median (IQR)" = ~ median_iqr(MMR14, na_rm = TRUE),
+             "missing" = ~sum(is.na(MMR14))),
+       "Mean years of schooling" =
+       list("min"       = ~ round(min(scl14, na.rm= TRUE),1),
+            "max"       = ~ round(max(scl14, na.rm= TRUE),1),
+            "median (IQR)" = ~ median_iqr(scl14, na_rm = TRUE),
+             "missing" = ~sum(is.na(scl14))),
+       "Year of Index Collection" =
+       list("2005-2009" = ~ n_perc0(GSNI_PERIOD == levels(results14$GSNI_PERIOD)[1]),
+            "2010-2014"  = ~ n_perc0(GSNI_PERIOD == levels(results14$GSNI_PERIOD)[2])))
+
+ results14[]           
+```
+
+
+
+
+
+
+```{r}
+
+finalsummary <- summary_table(results14, finalsummary)
+print(finalsummary,
+      rtitle = "Summary Statistics",
+      cnames = paste("n = ", nrow(results14)))
+```
+
+#box plots
+
+boxplot and t-test to compare trend of GSNI over collection periods
+
+```{r, include=FALSE}
+#prepare data for box plots
+trend1 <- read_excel("data/gsni_tables.xlsx", 3)
+trend <- as.data.table(trend1)
+trend <- trend[, c(1,4,5)]
+
+names(trend) <- c("country", "time1", "time2")
+
+#time 1 = 2005-09 collection 
+#time 2 = 2010-14 collection
+
+trend <- trend[8:38,] 
+
+trend[, time1 := as.numeric(time1)]
+trend[, time2 := as.numeric(time2)]
+
+trendbox <- trend
+names(trendbox) <- c("country", "2005-2009", "2010-2014")
+
+library(reshape) #for ggplot need to melt the data so all numeric in one column
+
+melt(trendbox)
+
+trendboxmelt <- reshape::melt(trendbox) #code in one line
+
+
+```
+
+
+
+
+Compared the GSNI values per time period for countries with both values (boxplot below), paired t-test no stat sig difference between time periods  - indicating that the norms do not change quickly over time
+
+```{r, echo = FALSE}
+box1 <- ggplot(trendboxmelt, aes(x=variable, y = value, color = variable)) +
+         geom_boxplot(notch=FALSE) + #if notch=TRUE and notches don't overlap good chance medians differ (notches display the confidence intervals around the medians)
+stat_summary(fun= mean, geom = "point", shape = 23, size = 15) + #displayes the means as a diamond
+geom_jitter(shape=16, size = 1, position = position_jitter(0.1)) +#adds in points, the jitter randomly varies the position along x axis
+labs(#title = "GSNI values change over time",
+     x = "GSNI collection time period",
+     y= "GSNI2 (%)",
+     subtitle = paste("n = ", nrow(trendbox)))+
+theme(legend.position = "none") #remove legend
+box1
+
+#n=31
+
+trend[, t.test(time1, time2, paired= TRUE, var.equal=TRUE)] #p value >0.05
+#see GSNI_trend_analysis script for test for normality etc
+
+```
+
+
+
+Compare values from the 2 collection points
+Mann whitney U test shows sig difference in value of the 2 collection periods, this may be due to countries taken at each time point, but may be due to the survey itself, therefore controlling for the time period of collection seems reasonable. 
+eg there might be something which has pushed up the GSNI in the second collection and these countries also happen to have higher CVD rates which would change the relationship
+
+
+```{r echo=FALSE}
+box2 <- ggplot(results14, aes(x= GSNI_PERIOD, y = twobias, color = GSNI_PERIOD)) +
+         geom_boxplot(notch=FALSE) + #if notch=TRUE and notches don't overlap good chance medians differ (notches display the confidence intervals around the medians)
+stat_summary(fun= mean, geom = "point", shape = 23, size = 15) + #displayes the means as a diamond
+geom_jitter(shape=16, size = 1, position = position_jitter(0.1)) +#adds in points, the jitter randomly varies the position along x axis
+labs(#title = "GSNI values by time period",
+     x = "GSNI collection time period",
+     y= "GSNI2 (%)",
+     subtitle = paste("n = ", nrow(results14)))+
+theme(legend.position = "none") 
+
+p1 <- results14[GSNI_PERIOD == "2005–2009", twobias]
+p2 <- results14[GSNI_PERIOD == "2010–2014", twobias]
+ #evidence that not normally distributed 
+
+wilcox.test(p1,p2,paired=FALSE)
+
+#n=75
+```
+
+```{r}
+boxes <- plot_grid(box1, box2, labels="AUTO")
+boxes
+ggsave("boxresults.png", boxes)
+```
+
+
+#scatter plots
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+outliercvd <- results14[cvd14fem>750,] 
+
+scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                #title = "Scatter plot of GSNI2 and female CVD mortality",
+                subtitle = paste("n = ", nrow(results14)))+
+  ggrepel::geom_text_repel(data = outliercvd, aes(label = location_name                                        ))  
+
+results14[,cor.test(twobias,cvd14fem,method = "spearman")]
+
+scatter1
+
+#positive correlation between GSNI and female CVD mortality rates (rho 0.67 p<0.05)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+outliercvdm <- results14[cvd14male>750,] 
+
+scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "male age standardised CVD mortaltiy rate (per 100k)",
+                #title = "Scatter plot of GSNI2 and male CVD mortality",
+                subtitle = paste("n = ", nrow(results14)))+
+  ggrepel::geom_text_repel(data = outliercvdm, aes(label = location_name                                        ))  
+
+results14[,cor.test(twobias,cvd14male,method = "spearman")]
+
+scatter2
+
+#positive correlation between GSNI and male CVD mortality rates (rho 0.53 p<0.05)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+outliercvdboth <- results14[cvd14both>800,]
+scatter3 <- ggplot(results14, aes(x = twobias, y = cvd14both)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "age standardised CVD mortaltiy rate (per 100k)",
+                #title = "Scatter plot of GSNI2 and CVD mortality (2014)",
+                subtitle = paste("n = ", nrow(results14)))+
+                 ggrepel::geom_text_repel(data = outliercvdboth, aes(label = location_name                                        )) 
+
+results14[,cor.test(twobias,cvd14both,method = "spearman")]
+
+scatter3
+
+#positive correlation between GSNI and female CVD mortality rates (rho 0.60 p<0.05)
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+outliercvdratio <- results14[cvdratio14>1.25,]
+scatter4 <- ggplot(results14, aes(x = twobias, y = cvdratio14)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "female to male CVD mortality ratio",
+                #title = "Scatter plot of GSNI2 and CVD mortality (2014)",
+                subtitle = paste("n = ", nrow(results14)))+
+                 ggrepel::geom_text_repel(data = outliercvdratio, aes(label = location_name                                        )) 
+
+results14[,cor.test(twobias,cvdratio14,method = "spearman")]
+
+scatter4
+
+#positive correlation between GSNI and female CVD mortality rates (rho 0.57 p<0.05)
+
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+out <- filter(results14, LEbirth2015 <63 | LEbirth2015 <70 & twobias <50)
+
+
+scatter5 <- ggplot(results14, aes(x = twobias, y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "female life expectancy (years)",
+                #title = "Scatter plot of GSNI2 and female life expectancy",
+              subtitle = paste("n = ", nrow(results14))) +
+               ggrepel::geom_text_repel(data = out, aes(label = location_name))
+
+results14[,cor.test(twobias,LEbirth2015,method = "spearman")]   
+
+scatter5
+
+#See a negative correlation with female life expectancy and GSNI (rho -0.72, p-value <0.05)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+out <- filter(results14, MLEbirth2015 <58 | MLEbirth2015 <70 & twobias <50)
+
+
+scatter6 <- ggplot(results14, aes(x = twobias, y = MLEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "male life expectancy (years)",
+                #title = "Scatter plot of GSNI2 and male life expectancy",
+              subtitle = paste("n = ", nrow(results14))) +
+               ggrepel::geom_text_repel(data = out, aes(label = location_name))
+
+results14[,cor.test(twobias,MLEbirth2015,method = "spearman")]   
+
+scatter6
+
+#See a negative correlation with female life expectancy and GSNI (rho -0.61, p-value <0.05)
+```
+
+
+```{r}
+
+scatterresults1 <- plot_grid(scatter1, scatter2, scatter3, scatter4, labels="AUTO")
+scatterresults1
+scatterresults2 <- plot_grid(scatter5, scatter6, labels="AUTO")
+scatterresults2
+ggsave("scatterresults1.png", scatterresults1, width = 28, height = 25, units = "cm")
+ggsave("scatterresults2.png", scatterresults2, width = 28, height = 16, units = "cm")
+```
+
+ 
+One way to make plots all the same is to use the facet_grid argument in ggplot (there are other ways, but I think this is the least faffy).
+So, instead of making three separate graphs like this:
+ggplot(analysis17noNA, aes(x = twobias, y = cvd17fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "percentage with 2 GSNI bias (%)",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                title = "Scatter plot of GSNI (2 bias) and female CVD mortality")
+ 
+You would have:
+ggplot(analysis17noNA, aes(x = twobias, y = cvd17)) +
+  geom_point(color = "violetred3")+
+facet_grid(cols = type) +
+  geom_smooth(method = "lm")+
+         labs(…)
+In order for this to work, your table of data needs to be in long format, so have one column for the cvd mortality, and then another for ‘type’ – male, female, overall.
+ 
+I use this cheat sheet all the time: https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf !
+
+#final scatter
+```{r}
+#wide to long format for consistent scatters
+analysis14copy <- copy(analysis14)
+
+long_14cvd <- melt(data = analysis14copy,
+                id.vars= c("location_name", "twobias"),
+                measure.vars = c("cvd14fem", "cvd14male", "cvd14both"),
+                variable.name = "cvdcat",
+                value.name = "rate"
+                )
+
+long_14LE <- melt(data = analysis14copy, 
+                  id.vars = c("location_name", "twobias"),
+                  measure.vars = c("LEbirth2015", "MLEbirth2015"),
+                  variable.name = "le",
+                  value.name = "years"
+                  )
+
+#labels for facets
+cvd.labs <- c("female", "male", "population")
+names(cvd.labs) <- c("cvd14fem", "cvd14male", "cvd14both")
+
+#data for outliers 
+outliercvd <- long_14cvd[rate>750,] 
+
+
+p1 <- ggplot(long_14cvd, aes(x = twobias, y = rate)) +
+  geom_point(color = "violetred3")+
+facet_grid(cols = vars(cvdcat),
+             labeller = labeller(cvdcat = cvd.labs)) +
+  geom_smooth(method = "lm") +
+   labs(x = "GSNI2 (%)",
+        y = "age standardised CVD mortaltiy rate (per 100k)" )+
+  ggrepel::geom_text_repel(data = outliercvd, aes(label = location_name                                        ))  
+
+scatterfinal1 <- p1 + theme(text=element_text(size=30), #change font size of all text
+        axis.text=element_text(size=20), #change font size of axis text
+        axis.title=element_text(size=20), #change font size of axis titles
+        plot.title=element_text(size=20), #change font size of plot title
+        legend.text=element_text(size=20), #change font size of legend text
+        legend.title=element_text(size=20)) #change font size of legend title 
+
+        
+ggsave("scatterfinal1.png", scatterfinal1, width = 35, height = 20, units = "cm")
+
+
+#labels for facets
+le.labs <- c("female", "male")
+names(le.labs) <- c("LEbirth2015", "MLEbirth2015")
+
+p2 <- ggplot(long_14LE, aes(x = twobias, y = years)) +
+  geom_point(color = "violetred3")+
+facet_grid(cols = vars(le),
+           labeller = labeller(le = le.labs)) +
+  geom_smooth(method = "lm")+
+   labs(x = "GSNI2 (%)",
+        y = "life expectancy (years)" )
+
+scatterfinal2 <- p2 + theme(text=element_text(size=30), #change font size of all text
+        axis.text=element_text(size=20), #change font size of axis text
+        axis.title=element_text(size=20), #change font size of axis titles
+        plot.title=element_text(size=20), #change font size of plot title
+        legend.text=element_text(size=20), #change font size of legend text
+        legend.title=element_text(size=20)) #change font size of legend title 
+
+ggsave("scatterfinal2.png", scatterfinal2, width = 35, height = 20, units = "cm")
+
+```
+
+
+
+
+
+
+#regression models
+
+```{r, include=FALSE}
+mf1 <- lm(cvd14fem ~ twobias, data = results14)
+mf2 <- lm(cvd14fem ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = results14)
+
+mf3 <- lm(cvd14male ~ twobias, data = results14)
+mf4 <- lm(cvd14male ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = results14)
+
+mf5 <- lm(cvd14both ~ twobias, data = results14)
+mf6 <- lm(cvd14both ~ twobias + phy14edit + scl14+ GDP14+GSNI_PERIOD, data = results14)
+
+mf7 <- lm(cvdratio14 ~ twobias, data = results14)
+noQuatar14 <- analysis14[-52,]
+mf8 <- lm(cvdratio14 ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = noQuatar14)
+
+mf9 <- lm(LEbirth2015 ~ twobias, data = results14)
+mf10 <- lm(LEbirth2015 ~ twobias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD + MMR14 , data = results14)
+
+mf11 <- lm(MLEbirth2015 ~ twobias, data = results14)
+mf12 <- lm(MLEbirth2015 ~ twobias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD , data = results14)
+```
+
+
+
+Regression table 1: female CVD mortality , male CVD mortality
+```{r, echo = FALSE, results='asis'}
+stargazer(mf1, mf2, mf3, mf4, type="html",
+out="man_results_regressiontable_1.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 1",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("female CVD mortality", "male CVD mortality"),
+omit.stat = c("ser", "n")
+                               )
+```
+
+
+
+
+for every 1% increase in percentage of population with 2 or more gender biases, age adjusted female CVD mortality rate increases by 4.86, and male CVD mortality rate increases by 5.28. That is controlling for physicians per 1000, education, GDP and GSNI collection period. 
+
+Regression table 2: CVD mortality , ratio CVD mortality (Qatar excluded)
+```{r, echo = FALSE, results='asis'}
+stargazer(mf5, mf6, mf7, mf8, type="html",
+out="man_results_regressiontable_2.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 2",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("CVD mortality", "female to male CVD mortality ratio"),
+omit.stat = c("ser", "n")
+                               )
+```
+
+
+
+
+Regression table 3: Female and male life expectancy
+```{r}
+
+
+stargazer(mf9, mf10, mf11, mf12, type="html",
+out="man_results_regressiontable_3.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 3",
+dep.var.labels = c("female life expectancy", "male life expectancy"),
+covariate.labels = c("constant", "GSNI","log (physicians per 1000)", "mean years of schooling", "log (GDP per capita)", "GSNI data collection period 2010-2014", "MMR"),
+omit.stat = c("ser","n")
+                               )
+
+
+```
+For every 1% increase in percentage of population with 2 or more gender biases, female life expectancy decreases by 0.07 years (26 days) when controlling for physicians per 1000, GDP, education, GSNI collection period and MMR
+
+
+#### Sensitivity analysis
+
+Analysis repeated with most recently available data (2017/19)
+
+
+
+#sensitivity regression models
+
+```{r, include=FALSE}
+mf13 <- lm(cvd17fem ~ twobias, data = results17)
+mf14 <- lm(cvd17fem ~ twobias + phy17edit + scl17 + GDP17 + GSNI_PERIOD, data = results17)
+
+mf15 <- lm(cvd17male ~ twobias, data = results17)
+mf16 <- lm(cvd17male ~ twobias + phy17edit + scl17 + GDP17 + GSNI_PERIOD, data = results17)
+
+mf17 <- lm(cvd17both ~ twobias, data = results17)
+mf18 <- lm(cvd17both ~ twobias + phy17edit + scl17+ GDP17+GSNI_PERIOD, data = results17)
+
+mf19 <- lm(cvdratio17 ~ twobias, data = results17)
+noQuatar17 <- analysis17[-52,]
+mf20 <- lm(cvdratio17 ~ twobias + phy17edit + scl17 + GDP17 + GSNI_PERIOD, data = noQuatar17)
+
+mf21 <- lm(LEbirth2019 ~ twobias, data = results17)
+mf22 <- lm(LEbirth2019 ~ twobias + log(phy17edit) + scl17 + log(GDP17) + GSNI_PERIOD + MMR17 , data = results17)
+
+mf23 <- lm(MLEbirth2019 ~ twobias, data = results17)
+mf24 <- lm(MLEbirth2019 ~ twobias + log(phy17edit) + scl17 + log(GDP17) + GSNI_PERIOD , data = results17)
+```
+
+
+
+Regression table 4: sensitivityfemale CVD mortality , male CVD mortality
+```{r, echo = FALSE, results='asis'}
+stargazer(mf13, mf14, mf15, mf16, type="html",
+out="man_results_regressiontable_4.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 4",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("female CVD mortality 17", "male CVD mortality 17"),
+omit.stat = c("ser", "n")
+                               )
+```
+
+
+
+Regression table 5: sensitivity CVD mortality , ratio CVD mortality (Qatar excluded)
+```{r, echo = FALSE, results='asis'}
+stargazer(mf17, mf18, mf19, mf20, type="html",
+out="man_results_regressiontable_5.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 5",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("CVD mortality 17", "female to male CVD mortality ratio 17"),
+omit.stat = c("ser", "n")
+                               )
+```
+
+
+
+
+Regression table 6: sensitivity Female and male life expectancy
+```{r}
+
+
+stargazer(mf21, mf22, mf23, mf24, type="html",
+out="man_results_regressiontable_6.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 6",
+dep.var.labels = c("female life expectancy 19", "male life expectancy 19"),
+covariate.labels = c("constant", "GSNI","log (physicians per 1000)", "mean years of schooling", "log (GDP per capita)", "GSNI data collection period 2010-2014", "MMR"),
+omit.stat = c("ser","n")
+                               )
+
+
+```
+
+
+
+

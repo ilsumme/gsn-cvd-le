@@ -1,0 +1,1316 @@
+---
+title: "dissertation analysis 2014"
+output: github_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+###load packages
+```{r}
+
+
+library(qwraps2)
+options(qwraps2_markup = "markdown")
+library(readr)
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(skimr)
+library(tidyverse)
+library(broom)
+library(SmartEDA)
+
+
+analysis14 <- read_csv("analysisratio14.csv")
+setDT(analysis14)
+
+analysis14[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+analysis14[, "...1":= NULL]
+
+
+```
+
+
+
+
+
+
+#2014
+
+# CODE BOOK (analysis14)
+
++-------------------------+----------------------------------------------------+
+| Variable                | Description                                        |
++=========================+====================================================+
+| location_name           | country                                            |
++-------------------------+----------------------------------------------------+
+| GSNI_PERIOD             | year data collection took place for GSNI survey    |
+|                         |  2005-2009 or 2010-2014                            |
++-------------------------+----------------------------------------------------+
+| twobias                 | share of people with at least two bias             |
++-------------------------+----------------------------------------------------+
+| cvd14fem                | age standardised CVD mortality rates for women per |            |                         |    100,000 population                              |
+|                         |    (from global burden of disease)                 |            
+|                         |     2014                                           |
++-------------------------+----------------------------------------------------+
+| cvd14male               | as above for whole males                           |
++-------------------------+----------------------------------------------------+
+| cvd14both               | as above for whole population                      |
++-------------------------+----------------------------------------------------+
+| cvdratio14              | ratio female/male CVD mortality rates              |
++-------------------------+----------------------------------------------------+
+| LEbirth2015             |  life expectancy at birth for                      |         
+|                         |  females in 2015, from WHO (years)                 |
++-------------------------+----------------------------------------------------+
+| MLEbirth2015            |  life expectancy at birth for                      |         
+|                         |  males in 2015, from WHO (years)                   |
++-------------------------+----------------------------------------------------+
+| phy14edit               | physicians per 1000 population 2014 (world bank)   |
+|                         |  data added from other years n = 19 (2013-17)      |
++-------------------------+----------------------------------------------------+
+| scl14                   | mean years of school 2014 (ourworldindata)         |
++-------------------------+----------------------------------------------------+
+| GDP14                   | Gross domestic product per capita (current US      |            |                         | dollar)  2014  (world bank)                        |
++-------------------------+----------------------------------------------------+
+| MMR14                   | Maternal Mortality Ratio 2014   (world bank)       |
++-------------------------+----------------------------------------------------+
+
+
+#Descriptive analysis
+```{r}
+glimpse(analysis14)
+summary(analysis14)
+```
+
+
+
+```{r}
+analysis14copy <- copy(analysis14)
+analysis14copy2 <- copy(analysis14)
+
+#create data table without MMR
+analysis14noMMR <- cbind(analysis14copy[, MMR14:=NULL])
+
+#create table without MMR and without NAs
+analysis14noMMRnoNA <- cbind(na.exclude(analysis14noMMR))
+
+#creat table with MMR with no NAs
+analysis14noNA <- cbind(na.exclude(analysis14copy2)) #exclude rows with NA as will prevent model comparison
+
+#just use analysis14 for all analysis as will exclude NAs
+```
+
+list of countries included
+```{r}
+analysis14noNA[,location_name] #66 rows (66 data points for MMR analysis)
+analysis14noMMRnoNA[,location_name] #67 rows 
+analysis14[,location_name] #75 rows
+```
+
+
+
+
+#####Histograms
+```{r}
+#ggplot(analysis14noNA, aes(x=twobias))+geom_histogram(binwidth=5, color = "Black", fill = "Pink")
+
+analysis14noNA[,hist(twobias)]
+analysis14noNA[,hist(cvd14fem)]
+analysis14noNA[,hist(cvd14male)]
+analysis14noNA[,hist(cvdratio14)]
+analysis14noNA[,hist(cvd14both)]
+analysis14noNA[,hist(LEbirth2015)]
+analysis14noNA[,hist(MLEbirth2015)]
+analysis14noNA[,hist(phy14edit)]
+analysis14noNA[,hist(scl14)]
+analysis14noNA[,hist(GDP14)]
+analysis14noNA[,hist(MMR14)]
+
+#no continuous variables variables normally distributed
+
+summary(analysis14noNA
+        )
+```
+
+#####summary tables
+https://statsandr.com/blog/descriptive-statistics-in-r/
+https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html
+
+```{r}
+our_summary1 <-
+  list("GSNI index 2 or more bias" =
+       list("min"       = ~ round(min(twobias),1),
+            "max"       = ~ round(max(twobias),1),
+            "median (IQR)" = ~ median_iqr(twobias),
+        "missing" = ~sum(is.na(twobias))),
+       "Female CVD age adjusted mortality rate (per 100 000 population)" =
+       list("min"       = ~ round(min(cvd14fem),1),
+            "max"       = ~ round(max(cvd14fem),1),
+            "median (IQR)" = ~ median_iqr(cvd14fem),
+             "missing" = ~sum(is.na(cvd14fem))),
+       "Male CVD age adjusted mortality rate (per 100 000 population)" =
+       list("min"       = ~ round(min(cvd14male),1),
+            "max"       = ~ round(max(cvd14male),1),
+            "median (IQR)" = ~ median_iqr(cvd14male),
+             "missing" = ~sum(is.na(cvd14male))),
+       "Population CVD age adjusted mortality rate (per 100 000 population)" =
+       list("min"       = ~ round(min(cvd14both),1),
+            "max"       = ~ round(max(cvd14both),1),
+            "median (IQR)" = ~ median_iqr(cvd14both),
+             "missing" = ~sum(is.na(cvd14both))),
+       "Ratio of female to male CVD mortality rates" =
+       list("min"       = ~ round(min(cvdratio14),1),
+            "max"       = ~ round(max(cvdratio14),1),
+            "median (IQR)" = ~ median_iqr(cvdratio14),
+             "missing" = ~sum(is.na(cvdratio14))),
+       "Female life expectancy at birth" =
+       list("min"       = ~ round(min(LEbirth2015),1),
+            "max"       = ~ round(max(LEbirth2015),1),
+            "median (IQR)" = ~ median_iqr(LEbirth2015),
+             "missing" = ~sum(is.na(LEbirth2015))),
+        "Male life expectancy at birth" =
+       list("min"       = ~ round(min(MLEbirth2015),1),
+            "max"       = ~ round(max(MLEbirth2015),1),
+            "median (IQR)" = ~ median_iqr(MLEbirth2015),
+             "missing" = ~sum(is.na(MLEbirth2015))),
+       "Physicians per 1000 population" =
+       list("min"       = ~ round(min(phy14edit, na.rm= TRUE),1), 
+            "max"       = ~ round(max(phy14edit, na.rm= TRUE),1), 
+            "median (IQR)" = ~ median_iqr(phy14edit, na_rm = TRUE),
+             "missing" = ~sum(is.na(phy14edit))),
+       "GDP per capita" =
+       list("min"       = ~ round(min(GDP14, na.rm= TRUE),1),
+            "max"       = ~ round(max(GDP14, na.rm= TRUE),1),
+            "median (IQR)" = ~ median_iqr(GDP14, na_rm = TRUE),
+             "missing" = ~sum(is.na(GDP14))),
+        "Maternal Mortality Ratio" =
+       list("min"       = ~ round(min(MMR14, na.rm= TRUE),1),
+            "max"       = ~ round(max(MMR14, na.rm= TRUE),1),
+            "median (IQR)" = ~ median_iqr(MMR14, na_rm = TRUE),
+             "missing" = ~sum(is.na(MMR14))),
+       "Mean years of schooling" =
+       list("min"       = ~ round(min(scl14, na.rm= TRUE),1),
+            "max"       = ~ round(max(scl14, na.rm= TRUE),1),
+            "median (IQR)" = ~ median_iqr(scl14, na_rm = TRUE),
+             "missing" = ~sum(is.na(scl14))),
+       "Year of Index Collection" =
+       list("2005-2009" = ~ n_perc0(GSNI_PERIOD == levels(analysis14$GSNI_PERIOD)[1]),
+            "2010-2014"  = ~ n_perc0(GSNI_PERIOD == levels(analysis14$GSNI_PERIOD)[2])))
+
+            
+```
+
+
+
+
+
+
+```{r}
+
+whole14 <- summary_table(analysis14, our_summary1)
+print(whole14,
+      rtitle = "Summary Statistics",
+      cnames = paste("n = ", nrow(results14)))
+```
+
+
+
+#OUTCOME 1 - CVD mortality female
+
+##Scatter plots
+
+###CVD mort (female) ~ GSNI
+
+```{r}
+ggplot(analysis14, aes(x = twobias, y = cvd14fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "percentage with 2 GSNI bias (%)",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                title = "Scatter plot of GSNI (2 bias) and female CVD mortality")
+
+analysis14noNA[,cor.test(twobias,cvd14fem,method = "spearman")]
+
+```
+
+
+###CVD mort (female) ~ physicians per 1000
+
+```{r}
+ggplot(analysis14, aes(x = phy14edit, y = cvd14fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "physicians per 1000 population",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                title = "Scatter plot of phycisians per 1000 and female CVD mortality")
+
+analysis14noNA[,cor.test(cvd14fem,phy14edit,method = "spearman")]
+
+```
+
+###CVD mort (female) ~ mean years of schooling
+
+```{r}
+ggplot(analysis14, aes(x = scl14, y = cvd14fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "mean years of schooling",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                title = "Mean years of schooling and female CVD mortality")
+
+analysis14noNA[,cor.test(scl14,cvd14fem,method = "spearman")]
+
+```
+
+###CVD mort (female) ~ GDP per capita
+
+```{r}
+ggplot(analysis14, aes(x =GDP14, y = cvd14fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GDP per capita",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                title = "GDP per capita and female CVD mortality")
+
+analysis14noNA[,cor.test(GDP14,cvd14fem,method = "spearman")]
+```
+
+###CVD mort (female) ~ MMR
+```{r}
+ggplot(analysis14, aes(x = MMR14, y = cvd14fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "Maternal Mortality Ratio",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                title = "MMR and female CVD mortality")
+
+analysis14noNA[,cor.test(MMR14,cvd14fem,method = "spearman")]
+
+```
+
+###CVD mort (female) ~ year of index
+```{r}
+
+outlier14 <- analysis14[cvd14fem>500,] #set up to label extreme values
+  
+#boxplot separated by period of collection
+ggplot(analysis14, aes(x = GSNI_PERIOD, y = cvd14fem)) +
+  geom_boxplot(color = "violetred3", notch= TRUE) +
+         labs(x = "GSNI period",
+                y = "female age standardised CVD mortaltiy rate",
+                title = "GSNI period of collection and female CVD mortality")+
+ggrepel::geom_text_repel(data = outlier14, aes(label = location_name                                        ))  
+  
+
+
+```
+
+##Univariable regression
+
+###CVD mort (female) ~ GSNI
+
+```{r}
+m1 <- lm(cvd14fem ~ twobias, data = analysis14)
+summary(m1)
+plot(m1)
+
+m1tidy <- tidy(m1)
+kable(m1tidy, digits = 3)
+```
+
+
+###CVD mort (female) ~ physicians per 1000
+```{r}
+m2 <- lm(cvd14fem ~ phy14edit, data = analysis14)
+summary(m2)
+plot(m2)
+```
+
+###CVD mort (female) ~ mean years of schooling
+```{r}
+m3 <- lm(cvd14fem ~ scl14, data = analysis14)
+summary(m3)
+plot(m3)
+```
+
+###CVD mort (female) ~ GDP per capita
+```{r}
+m4 <- lm(cvd14fem ~ GDP14, data = analysis14)
+summary(m4)
+plot(m4)
+```
+
+###CVD mort (female) ~ MMR
+```{r}
+m5 <- lm(cvd14fem ~ MMR14, data = analysis14)
+summary(m5)
+plot(m5)
+```
+
+###CVD mort (female) ~ year of index
+```{r}
+m6 <- lm(cvd14fem ~ GSNI_PERIOD, data = analysis14)
+summary(m6)
+plot(m6)
+```
+
+##Multivariable regression
+```{r}
+
+m7 <- lm(cvd14fem ~ twobias + phy14edit + scl14+ MMR14+ GDP14, data = analysis14)
+summary(m7)
+plot(m7)
+
+#added in GSNI PERIOD
+m8 <- lm(cvd14fem ~ twobias + phy14edit + scl14+ MMR14+ GDP14+GSNI_PERIOD, data = analysis14)
+summary(m8)
+plot(m8)
+
+
+m8tidy <- tidy(m8)
+kable(m8tidy, digits = 3)
+#r2 higher in m8
+
+#without MMR
+m7.1 <- lm(cvd14fem ~ twobias + phy14edit + scl14+ GDP14+GSNI_PERIOD, data = analysis14)
+summary(m7.1)
+plot(m7.1)
+
+```
+
+http://r-statistics.co/Outlier-Treatment-With-R.html
+```{r}
+
+cooksd <- cooks.distance(m8)
+
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance
+abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
+
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])
+# influential row numbers
+analysis14[influential, ]  # influential observations.
+
+car::outlierTest(m8)
+```
+
+
+assess for colinearity
+```{r}
+
+car::vif(m7.1)
+#all <4
+```
+
+assess for normality of residuals 
+```{r}
+shapiro.test(m7$residuals)
+
+
+shapiro.test(m8$residuals)
+
+#evidence of non-normality in the residuals
+```
+```{r}
+#check for independence
+plot(m7$residuals, type = "o")
+plot(m8$residuals, type = "o")
+```
+
+
+####Assumptions
+Linearity - residual vs fitted appears within limits
+Normality of residuals - QQplots show some deviance, shapiro-wilk are significant suggesting lack of normality 
+Independence - looks fine
+multicolinearity - all within limits
+homoscedacity - scale-location plot for m8 looks better than m7, (flatter and closer to 1)
+
+####Try removing Uzbekistan
+```{r}
+analysis14noUzbek <- analysis14[-63,]
+
+m8noUzbek <- lm(cvd14fem ~ twobias + phy14edit + scl14+ MMR14+ GDP14+GSNI_PERIOD, data = analysis14noUzbek)
+summary(m8noUzbek)
+plot(m8noUzbek)
+shapiro.test(m8noUzbek$residuals)
+
+#decreases coefficient slightly 4.8 to 4.2, now 46 (Quatar) is outside cook's distance... probably not better to exlude it
+```
+
+
+
+####Comparing AIC (using corrected as number of covariates is 10% of data https://stats.stackexchange.com/questions/86768/aicc-for-small-sample-sizes)
+
+```{r}
+AICcmodavg::AICc(m7)
+
+AICcmodavg::AICc(m8) #m8 has lower AICc -> preferable
+```
+
+
+#OUTCOME 2 - CVD mortality male
+
+##Scatter plots
+
+###CVD mort (male) ~ GSNI
+
+```{r}
+ggplot(analysis14, aes(x = twobias, y = cvd14male)) +
+  geom_point(color = "darkgreen")+
+  geom_smooth(method = "lm")+
+         labs(x = "percentage with 2 GSNI bias (%)",
+                y = "male age standardised CVD mortaltiy rate (per 100k)",
+                title = "Scatter plot of GSNI (2 bias) and male CVD mortality")
+
+analysis14[,cor.test(twobias,cvd14male,method = "spearman")]
+
+```
+
+
+###CVD mort (male) ~ physicians per 1000
+
+```{r}
+ggplot(analysis14, aes(x = phy14edit, y = cvd14male)) +
+  geom_point(color = "darkgreen")+
+  geom_smooth(method = "lm")+
+         labs(x = "physicians per 1000 population",
+                y = "male age standardised CVD mortaltiy rate (per 100k)",
+                title = "Scatter plot of phycisians per 1000 and male CVD mortality")
+
+analysis14[,cor.test(cvd14male,phy14edit,method = "spearman")]
+
+```
+
+###CVD mort (male) ~ mean years of schooling
+
+```{r}
+ggplot(analysis14, aes(x = scl14, y = cvd14male)) +
+  geom_point(color = "darkgreen")+
+  geom_smooth(method = "lm")+
+         labs(x = "mean years of schooling",
+                y = "male age standardised CVD mortaltiy rate (per 100k)",
+                title = "Mean years of schooling and male CVD mortality")
+
+analysis14[,cor.test(scl14,cvd14male,method = "spearman")]
+
+```
+
+###CVD mort (male) ~ GDP per capita
+
+```{r}
+ggplot(analysis14, aes(x =GDP14, y = cvd14male)) +
+  geom_point(color = "darkgreen")+
+  geom_smooth(method = "lm")+
+         labs(x = "GDP per capita",
+                y = "male age standardised CVD mortaltiy rate (per 100k)",
+                title = "GDP per capita and male CVD mortality")
+
+analysis14[,cor.test(GDP14,cvd14male,method = "spearman")]
+```
+
+
+
+###CVD mort (male) ~ year of index
+```{r}
+
+outlier14male <- analysis14[cvd14male>750,] #set up to label extreme values
+  
+#boxplot separated by period of collection
+ggplot(analysis14, aes(x = GSNI_PERIOD, y = cvd14male)) +
+  geom_boxplot(color = "violetred3", notch= FALSE) +
+         labs(x = "GSNI period",
+                y = "male age standardised CVD mortaltiy rate",
+                title = "GSNI period of collection and male CVD mortality")+
+ggrepel::geom_text_repel(data = outlier14male, aes(label = location_name                                        ))  
+  
+
+
+```
+
+##Univariable regression
+
+###CVD mort (male) ~ GSNI
+
+```{r}
+m1m <- lm(cvd14male ~ twobias, data = analysis14)
+summary(m1m)
+plot(m1m)
+
+m1mtidy <- tidy(m1m)
+kable(m1mtidy, digits = 3)
+```
+
+
+###CVD mort (male) ~ physicians per 1000
+```{r}
+m2m <- lm(cvd14male ~ phy14edit, data = analysis14)
+summary(m2m)
+plot(m2m)
+```
+
+###CVD mort (male) ~ mean years of schooling
+```{r}
+m3m <- lm(cvd14male ~ scl14, data = analysis14)
+summary(m3m)
+plot(m3m)
+```
+
+###CVD mort (male) ~ GDP per capita
+```{r}
+m4m <- lm(cvd14male ~ GDP14, data = analysis14)
+summary(m4m)
+plot(m4m)
+```
+
+
+###CVD mort (male) ~ year of index
+```{r}
+m6m <- lm(cvd14male ~ GSNI_PERIOD, data = analysis14)
+summary(m6m)
+plot(m6m)
+```
+
+##Multivariable regression
+```{r}
+
+m7m <- lm(cvd14male ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = analysis14)
+summary(m7m)
+plot(m7m)
+
+```
+
+http://r-statistics.co/Outlier-Treatment-With-R.html
+
+
+
+assess for colinearity
+```{r}
+car::vif(m7m)
+#all <4
+```
+
+
+
+```{r}
+#check for independence
+plot(m7m$residuals, type = "o")
+
+```
+
+
+####Assumptions
+Linearity - residual vs fitted appears within limits
+Normality of residuals - QQplots appear within limits
+Independence - within limits
+multicolinearity - all within limits
+homoscedacity - scale-location plot appears within limits
+
+
+
+#OUTCOME 3 - Population CVD mortality
+
+##Scatter plots
+
+###CVD mort ~ GSNI
+```{r}
+ggplot(analysis14, aes(x = twobias, y = cvd14both)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "percentage with 2 GSNI bias (%)",
+                y = "age standardised CVD mortaltiy rate (per 100k)",
+                title = "Scatter plot of GSNI (2 bias) and CVD mortality (2014)")
+
+analysis14[,cor.test(twobias,cvd14both,method = "spearman")]
+
+```
+
+###CVD mort  ~ physicians per 1000
+
+```{r}
+ggplot(analysis14, aes(x = phy14edit, y = cvd14both)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "physicians per 1000 population",
+                y = "age standardised CVD mortaltiy rate (per 100k)",
+                title = "Scatter plot of phycisians per 1000 and CVD mortality")
+
+analysis14[,cor.test(cvd14both,phy14edit,method = "spearman")]
+
+```
+###CVD mort ~ mean years of schooling
+```{r}
+ggplot(analysis14, aes(x = scl14, y = cvd14both)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "mean years of schooling",
+                y = "age standardised CVD mortaltiy rate (per 100k)",
+                title = "Mean years of schooling and CVD mortality")
+
+analysis14[,cor.test(scl14,cvd14both,method = "spearman")]
+
+```
+###CVD mort  ~ GDP per capita
+```{r}
+ggplot(analysis14, aes(x =GDP14, y = cvd14both)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GDP per capita",
+                y = "age standardised CVD mortaltiy rate (per 100k)",
+                title = "GDP per capita and CVD mortality")
+
+analysis14[,cor.test(GDP14,cvd14both,method = "spearman")]
+```
+###CVD mort  ~ MMR
+```{r}
+ggplot(analysis14, aes(x = MMR14, y = cvd14both)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "Maternal Mortality Ratio",
+                y = "age standardised CVD mortaltiy rate (per 100k)",
+                title = "MMR and CVD mortality")
+
+analysis14[,cor.test(MMR14,cvd14both,method = "spearman")]
+
+```
+###CVD mort  ~ year of index
+```{r}
+
+outlier14.2 <- analysis14[cvd14both>600, ]
+ggplot(analysis14, aes(x = GSNI_PERIOD, y = cvd14both)) +
+  geom_boxplot(color = "violetred3", notch= TRUE)+
+  
+         labs(x = "GSNI period",
+                y = "age standardised CVD mortaltiy rate (per 100k) (2014)",
+                title = "GSNI period of collection and CVD mortality")+
+ ggrepel::geom_text_repel(data = outlier14.2, aes(label = location_name                                        ))   
+
+
+```
+
+##Univariable regression
+
+###CVD mort  ~ GSNI
+```{r}
+m9 <- lm(cvd14both ~ twobias, data = analysis14)
+summary(m9)
+plot(m9)
+
+m9tidy <- tidy(m9)
+kable(m9tidy, digits = 3)
+```
+###CVD mort  ~ physicians per 1000
+```{r}
+m10 <- lm(cvd14both ~ phy14edit, data = analysis14)
+summary(m10)
+plot(m10)
+```
+###CVD mort  ~ mean years of schooling
+```{r}
+m11 <- lm(cvd14both ~ scl14, data = analysis14)
+summary(m11)
+plot(m11)
+```
+###CVD mort  ~ GDP per capita
+```{r}
+m12 <- lm(cvd14both ~ GDP14, data = analysis14)
+summary(m12)
+plot(m12)
+```
+###CVD mort ~ MMR
+```{r}
+m13 <- lm(cvd14both ~ MMR14, data = analysis14)
+summary(m13)
+plot(m13)
+```
+###CVD mort ~ year of index
+```{r}
+m14 <- lm(cvd14both ~ GSNI_PERIOD, data = analysis14)
+summary(m14)
+plot(m14)
+```
+##Multivariable regression
+
+```{r}
+
+m15<- lm(cvd14both ~ twobias + phy14edit + scl14+ MMR14+ GDP14, data = analysis14)
+summary(m15)
+plot(m15)
+
+#added in GSNI PERIOD
+m16 <- lm(cvd14both ~ twobias + phy14edit + scl14+ MMR14+ GDP14+GSNI_PERIOD, data = analysis14)
+summary(m16)
+plot(m16)
+
+
+
+car::outlierTest(m16)
+
+#remove MMR
+m16.1 <- lm(cvd14both ~ twobias + phy14edit + scl14+ GDP14+GSNI_PERIOD, data = analysis14)
+summary(m16.1)
+plot(m16.1)
+
+```
+
+
+assess for colinearity
+```{r}
+
+car::vif(m16.1)
+#all <4
+```
+
+
+
+
+
+
+
+Assumptions
+Linearity - residual vs fitted appears within limits
+Normality of residuals - QQplots show some deviance, shapiro-wilk are significant suggesting lack of normality 
+Independence - looks fine
+multicolinearity - all within limits
+homoscedacity - scale-location plot for m8 looks better than m7, (flatter and closer to 1)
+
+
+#OUTCOME 4 - CVD mortality female/male ratio
+
+##Scatter plots
+
+###CVD ratio ~ GSNI
+
+```{r}
+ggplot(analysis14, aes(x = twobias, y = cvdratio14)) +
+  geom_point(color = "orange")+
+  geom_smooth(method = "lm")+
+         labs(x = "percentage with 2 GSNI bias (%)",
+                y = "female/male CVD mortaltiy ratio",
+                title = "Scatter plot of GSNI (2 bias) and female/male CVD mortality ratio")
+
+analysis14[,cor.test(twobias,cvdratio14,method = "spearman")]
+
+```
+
+
+###CVD ratio ~ physicians per 1000
+
+```{r}
+ggplot(analysis14, aes(x = phy14edit, y = cvdratio14)) +
+  geom_point(color = "orange")+
+  geom_smooth(method = "lm")+
+         labs(x = "physicians per 1000 population",
+                y = "female/male CVD mortaltiy ratio",
+                title = "Scatter plot of phycisians per 1000 and CVD mortality ratio")
+
+analysis14[,cor.test(cvdratio14,phy14edit,method = "spearman")]
+
+```
+
+###CVD ratio ~ mean years of schooling
+
+```{r}
+ggplot(analysis14, aes(x = scl14, y = cvdratio14)) +
+  geom_point(color = "orange")+
+  geom_smooth(method = "lm")+
+         labs(x = "mean years of schooling",
+                y = "femlae/male CVD mortaltiy ratio",
+                title = "Mean years of schooling and CVD mortality ratio")
+
+analysis14[,cor.test(scl14,cvdratio14,method = "spearman")]
+
+```
+
+###CVD ratio ~ GDP per capita
+
+```{r}
+ggplot(analysis14, aes(x =GDP14, y = cvdratio14)) +
+  geom_point(color = "orange")+
+  geom_smooth(method = "lm")+
+         labs(x = "GDP per capita",
+                y = "female/male CVD mortaltiy ratio",
+                title = "GDP per capita and CVD mortality ratio")
+
+analysis14[,cor.test(GDP14,cvdratio14,method = "spearman")]
+```
+
+
+
+
+##Univariable regression
+
+###CVD ratio ~ GSNI
+
+```{r}
+m1r <- lm(cvdratio14 ~ twobias, data = analysis14)
+summary(m1r)
+plot(m1r)
+
+```
+
+
+###CVD ratio ~ physicians per 1000
+```{r}
+m2r <- lm(cvdratio14 ~ phy14edit, data = analysis14)
+summary(m2r)
+plot(m2r)
+```
+
+###CVD ratio ~ mean years of schooling
+```{r}
+m3r <- lm(cvdratio14 ~ scl14, data = analysis14)
+summary(m3r)
+plot(m3r)
+```
+
+###CVD ratio ~ GDP per capita
+```{r}
+m4r <- lm(cvdratio14 ~ GDP14, data = analysis14)
+summary(m4r)
+plot(m4r)
+```
+
+
+###CVD ratio ~ year of index
+```{r}
+m6r <- lm(cvdratio14 ~ GSNI_PERIOD, data = analysis14)
+summary(m6r)
+plot(m6r)
+```
+
+##Multivariable regression
+```{r}
+
+m7r <- lm(cvdratio14 ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = analysis14)
+summary(m7r)
+plot(m7r)
+
+```
+
+http://r-statistics.co/Outlier-Treatment-With-R.html
+
+```{r}
+
+cooksd <- cooks.distance(m7r)
+
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")  # plot cook's distance
+abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
+
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])
+# influential row numbers
+analysis14[influential, ]  # influential observations.
+
+car::outlierTest(m7r)
+
+#Quator is outside Cooks distance
+
+noQuatar <- analysis14[-52,]
+m7rnoQ <- lm(cvdratio14 ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = noQuatar)
+summary(m7rnoQ)
+plot(m7rnoQ)
+
+#after Quatar removed not significant
+
+```
+
+assess for colinearity
+```{r}
+car::vif(m7rnoQ)
+#all <4
+```
+
+
+
+```{r}
+#check for independence
+plot(m7rnoQ$residuals, type = "o")
+
+```
+
+
+####Assumptions
+Linearity - residual vs fitted appears within limits
+Normality of residuals - QQplots appear within limits
+Independence - within limits
+multicolinearity - all within limits
+homoscedacity - scale-location plot appears within limits
+
+#OUTCOME 5 Life expectancy for women
+
+## Scatter plots
+
+### Life Expectancy ~ GSNI
+```{r}
+ggplot(analysis14, aes(x = twobias, y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "percentage with 2 GSNI bias (%)",
+                y = "Female life expectancy",
+                title = "Scatter plot of GSNI (2 bias) and female life expectancy")
+
+analysis14[,cor.test(twobias,LEbirth2015,method = "spearman")]
+
+```
+
+###Life Expectancy ~ physicians per 1000
+```{r}
+ggplot(analysis14, aes(x = phy14edit, y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+         labs(x = "physicians per 1000",
+                y = "Female life expectancy",
+                title = "Scatter plot of physicians per 1000 and female life expectancy")
+
+analysis14[,cor.test(phy14edit,LEbirth2015,method = "spearman")]
+
+```
+###Life Expectancy ~ mean years of schooling
+```{r}
+ggplot(analysis14, aes(x = scl14, y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "mean years of schooling",
+                y = "Female life expectancy",
+                title = "Scatter plot of mean years of schooling and female life expectancy")
+
+analysis14[,cor.test(scl14,LEbirth2015,method = "spearman")]
+
+```
+###Life Expectancy ~ GDP per capita
+```{r}
+ggplot(analysis14, aes(x = GDP14, y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+         labs(x = "GDP per capita",
+                y = "Female life expectancy",
+                title = "GDP per capita and female life expectancy")
+
+#can take a log of GDP has better relationship
+ggplot(analysis14, aes(x = log(GDP14), y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "log GDP per capita",
+                y = "Female life expectancy",
+                title = "log GDP per capita and female life expectancy")
+
+analysis14[,cor.test(GDP14,LEbirth2015,method = "spearman")]
+
+```
+###Life Expectancy ~ MMR
+```{r}
+ggplot(analysis14, aes(x = MMR14, y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "MMR",
+                y = "Female life expectancy",
+                title = "Scatter plot of MMR and female life expectancy")
+
+analysis14[,cor.test(MMR14,LEbirth2015,method = "spearman")]
+
+```
+###Life Expectancy ~ year of index
+```{r}
+outlier14.3 <- analysis14[LEbirth2015<65,]
+
+ggplot(analysis14, aes(x = GSNI_PERIOD, y = LEbirth2015)) +
+  geom_boxplot(color = "violetred3", notch= TRUE)+
+  
+         labs(x = "GSNI period",
+                y = "Life expectancy at birth (2015)",
+                title = "GSNI period of collection and life expectancy")+
+ggrepel::geom_text_repel(data = outlier14.3, aes(label = location_name                                        ))  
+
+```
+
+
+##Univariable regression
+
+###Life Expectancy ~ GSNI
+```{r}
+m17 <- lm(LEbirth2015 ~ twobias, data = analysis14)
+summary(m17)
+plot(m17)
+
+m17tidy <- tidy(m17)
+kable(m17tidy, digits = 3)
+```
+
+###Life Expectancy ~ physicians per 1000
+```{r}
+m18 <- lm(LEbirth2015 ~ phy14edit, data = analysis14)
+summary(m18)
+plot(m18)
+```
+
+###Life Expectancy ~ mean years of schooling
+```{r}
+m19 <- lm(LEbirth2015 ~ scl14, data = analysis14)
+summary(m19)
+plot(m19)
+```
+
+###Life Expectancy ~ GDP per capita
+```{r}
+m20 <- lm(LEbirth2015 ~ GDP14, data = analysis14)
+summary(m20)
+plot(m20)
+```
+###Life Expectancy ~ MMR
+```{r}
+m21 <- lm(LEbirth2015 ~ MMR14, data = analysis14)
+summary(m21)
+plot(m21)
+```
+###Life Expectancy ~ year of index
+```{r}
+m22 <- lm(LEbirth2015 ~ GSNI_PERIOD, data = analysis14)
+summary(m22)
+plot(m22)
+```
+
+##Multivariable regression
+```{r}
+
+m23 <- lm(LEbirth2015 ~ twobias + phy14edit + scl14+ MMR14+ GDP14, data = analysis14)
+summary(m23)
+plot(m23)
+
+#added in GSNI PERIOD
+m24 <- lm(LEbirth2015 ~ twobias + phy14edit + scl14+ MMR14+ GDP14+GSNI_PERIOD, data = analysis14)
+summary(m24)
+plot(m24)
+
+m24tidy <- tidy(m24)
+kable(m24tidy, digits = 3)
+
+car::outlierTest(m24)
+
+m24.2 <- lm(LEbirth2015 ~ twobias + phy14edit + scl14+ GDP14+GSNI_PERIOD, data = analysis14)
+summary(m24.2)
+plot(m24.2)
+
+#GDP is not linear with LE, https://kenbenoit.net/assets/courses/ME104/logmodels2.pdf
+#therefore can try a log also with phy based on plotting hte regression terms of the model below
+
+m24.3 <- lm(LEbirth2015 ~ twobias + log(phy14edit) + scl14+ log(GDP14)+GSNI_PERIOD +MMR14, data = analysis14)
+summary(m24.3)
+plot(m24.3)
+
+```
+
+
+```{r}
+
+#plot regression terms of the model
+par(mfrow = c(2, 3)) # We have 4 predictors
+termplot(m24.3, partial.resid = TRUE)
+```
+
+
+
+assess for colinearity
+```{r}
+car::vif(m24.3)
+#log(phy14edit is 4.8)
+```
+
+assess for normality of residuals 
+
+
+
+
+
+Assumptions
+Linearity - residual vs fitted appears non linear, will investigate log transformation of variables
+Normality of residuals - QQplots look ok and shapiro wilk not significant
+Independence - looks fine
+multicolinearity - all <5
+homoscedacity - scale-location plot looks ok around 1
+
+####no Nigeria
+```{r}
+analysis14noNig <- analysis14[-40,]
+m24noNig <- lm(LEbirth2015 ~ twobias + log(phy14edit) + scl14+ MMR14+ log(GDP14) + GSNI_PERIOD, data = analysis14noNig)
+summary(m24noNig)
+plot(m24noNig)
+
+shapiro.test(m24noNig$residuals)
+
+#removing Nigeria doesn't change results
+```
+
+
+
+Comparing AIC (using corrected as number of covariates is 10% of data https://stats.stackexchange.com/questions/86768/aicc-for-small-sample-sizes)
+
+```{r}
+AICcmodavg::AICc(m23)
+
+AICcmodavg::AICc(m24) #m24 has lower AICc -> preferable
+
+AICcmodavg::AICc(m24noNig)
+
+```
+
+#OUTCOME 6 Life expectancy for men
+
+## Scatter plots
+
+### Life Expectancy ~ GSNI
+```{r}
+ggplot(analysis14, aes(x = twobias, y = MLEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "percentage with 2 GSNI bias (%)",
+                y = "male life expectancy",
+                title = "Scatter plot of GSNI (2 bias) and male life expectancy")
+
+analysis14[,cor.test(twobias,MLEbirth2015,method = "spearman")]
+
+```
+
+###Life Expectancy ~ physicians per 1000
+```{r}
+ggplot(analysis14, aes(x = phy14edit, y = MLEbirth2015)) +
+  geom_point(color = "violetred3")+
+         labs(x = "physicians per 1000",
+                y = "male life expectancy",
+                title = "Scatter plot of physicians per 1000 and male life expectancy")
+
+analysis14[,cor.test(phy14edit,MLEbirth2015,method = "spearman")]
+
+```
+###Life Expectancy ~ mean years of schooling
+```{r}
+ggplot(analysis14, aes(x = scl14, y = MLEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "mean years of schooling",
+                y = "male life expectancy",
+                title = "Scatter plot of mean years of schooling and male life expectancy")
+
+analysis14[,cor.test(scl14,MLEbirth2015,method = "spearman")]
+
+```
+###Life Expectancy ~ GDP per capita
+```{r}
+ggplot(analysis14, aes(x = GDP14, y = MLEbirth2015)) +
+  geom_point(color = "violetred3")+
+         labs(x = "GDP per capita",
+                y = "male life expectancy",
+                title = "GDP per capita and male life expectancy")
+
+#can take a log of GDP has better relationship
+ggplot(analysis14, aes(x = log(GDP14), y = MLEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "log GDP per capita",
+                y = "male life expectancy",
+                title = "log GDP per capita and male life expectancy")
+
+analysis14[,cor.test(GDP14,MLEbirth2015,method = "spearman")]
+
+```
+
+###Life Expectancy ~ year of index
+```{r}
+outlier14.3m <- analysis14[MLEbirth2015<65,]
+
+ggplot(analysis14, aes(x = GSNI_PERIOD, y = MLEbirth2015)) +
+  geom_boxplot(color = "violetred3", notch= TRUE)+
+  
+         labs(x = "GSNI period",
+                y = "Male life expectancy at birth (2015)",
+                title = "GSNI period of collection and life expectancy")+
+ggrepel::geom_text_repel(data = outlier14.3m, aes(label = location_name                                        ))  
+
+```
+
+
+##Univariable regression
+
+###Life Expectancy ~ GSNI
+```{r}
+m17m <- lm(MLEbirth2015 ~ twobias, data = analysis14)
+summary(m17m)
+plot(m17m)
+
+```
+
+###Life Expectancy ~ physicians per 1000
+```{r}
+m18m <- lm(MLEbirth2015 ~ phy14edit, data = analysis14)
+summary(m18m)
+plot(m18m)
+```
+
+###Life Expectancy ~ mean years of schooling
+```{r}
+m19m <- lm(MLEbirth2015 ~ scl14, data = analysis14)
+summary(m19m)
+plot(m19m)
+```
+
+###Life Expectancy ~ GDP per capita
+```{r}
+m20m <- lm(MLEbirth2015 ~ GDP14, data = analysis14)
+summary(m20m)
+plot(m20m)
+```
+
+###Life Expectancy ~ year of index
+```{r}
+m22m <- lm(MLEbirth2015 ~ GSNI_PERIOD, data = analysis14)
+summary(m22m)
+plot(m22m)
+```
+
+##Multivariable regression
+```{r}
+
+
+m24m <- lm(MLEbirth2015 ~ twobias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD, data = analysis14)
+summary(m24m)
+plot(m24m)
+
+```
+
+
+
+
+
+
+assess for colinearity
+```{r}
+
+car::vif(m24m)
+#all <4
+```
+
+assess for normality of residuals 
+
+
+
+```{r}
+#check for independence
+
+plot(m24m$residuals, type = "o")
+```
+
+
+Assumptions
+Linearity - residual vs fitted appears non linear, will investigate log transformation of variables
+Normality of residuals - QQplots look ok and shapiro wilk not significant
+Independence - looks fine
+multicolinearity - all within limits
+homoscedacity - scale-location plot looks ok around 1
+
+
+
+
+#---
+
