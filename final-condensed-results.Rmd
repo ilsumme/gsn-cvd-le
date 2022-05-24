@@ -464,7 +464,7 @@ mf5 <- lm(cvd14both ~ twobias, data = results14)
 mf6 <- lm(cvd14both ~ twobias + phy14edit + scl14+ GDP14+GSNI_PERIOD, data = results14)
 
 mf7 <- lm(cvdratio14 ~ twobias, data = results14)
-noQuatar14 <- analysis14[-52,]
+noQuatar14 <- results14[-52,]
 mf8 <- lm(cvdratio14 ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = noQuatar14)
 
 mf9 <- lm(LEbirth2015 ~ twobias, data = results14)
@@ -474,7 +474,44 @@ mf11 <- lm(MLEbirth2015 ~ twobias, data = results14)
 mf12 <- lm(MLEbirth2015 ~ twobias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD , data = results14)
 ```
 
+#95% confidence intervals
+```{r}
+summary(mf1)
+confint(mf1)
 
+summary(mf2)
+confint(mf2)
+
+summary(mf3)
+confint(mf3)
+
+summary(mf4)
+confint(mf4)
+
+summary(mf5)
+confint(mf5)
+
+summary(mf6)
+confint(mf6)
+
+summary(mf7)
+confint(mf7)
+
+summary(mf8)
+confint(mf8)
+
+summary(mf9)
+confint(mf9)
+
+summary(mf10)
+confint(mf10)
+
+summary(mf11)
+confint(mf11)
+
+summary(mf12)
+confint(mf12)
+```
 
 Regression table 1: female CVD mortality , male CVD mortality
 ```{r, echo = FALSE, results='asis'}
@@ -547,6 +584,7 @@ omit.stat = c("ser","n")
 For every 1% increase in percentage of population with 2 or more gender biases, female life expectancy decreases by 0.07 years (26 days) when controlling for physicians per 1000, GDP, education, GSNI collection period and MMR
 
 
+
 #### Sensitivity analysis
 
 Analysis repeated with most recently available data (2017/19)
@@ -566,7 +604,7 @@ mf17 <- lm(cvd17both ~ twobias, data = results17)
 mf18 <- lm(cvd17both ~ twobias + phy17edit + scl17+ GDP17+GSNI_PERIOD, data = results17)
 
 mf19 <- lm(cvdratio17 ~ twobias, data = results17)
-noQuatar17 <- analysis17[-52,]
+noQuatar17 <- results17[-52,]
 mf20 <- lm(cvdratio17 ~ twobias + phy17edit + scl17 + GDP17 + GSNI_PERIOD, data = noQuatar17)
 
 mf21 <- lm(LEbirth2019 ~ twobias, data = results17)
@@ -645,5 +683,26 @@ omit.stat = c("ser","n")
 ```
 
 
+###Apendix
+####list of countries included
 
+```{r}
+#univariable analyses
+write.csv(results14, "75countrylist.csv")
+
+#life expectancy outcomes
+results14noNA <- na.omit(results14, invert = FALSE)
+write.csv(results14noNA, "66countrylistLE.csv")
+
+#cvd outcome analysis
+results14noMMR <- results14[,c("MMR14"):=NULL] 
+resultsnoMMRnoNA <- na.omit(results14noMMR, invert=FALSE)
+write.csv(resultsnoMMRnoNA, "67countrylist.csv")
+
+#cvd ratio analysis
+resultsnoMMRnoNAnoQatar <- resultsnoMMRnoNA[-47,]
+write.csv(resultsnoMMRnoNAnoQatar, "66countrylistnoQatar.csv")
+
+
+```
 

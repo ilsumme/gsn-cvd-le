@@ -1,0 +1,159 @@
+---
+title: "Notes"
+author: "Iona Lyell"
+date: "27/01/2022"
+output: html_document
+---
+
+To do:
+
+
+letter to editor: updated
+
+Abstract: updated
+ 
+Intro: updated
+
+Methods: updated
+
+Results: 
+updated
+
+Disucssion: 
+
+unmeasured confounding examples: e.g. diet, parity
+
+Appendix: countries included in each analysis, *review appendix and tables*
+
+Share results plus specific Qs for reviewers, 
+- what more to add re gender...struggling with this
+- thought on interpretation
+
+
+Plan to submit to BMJ mid-Feb (secondary journal options Circulation and JACC)
+
+
+Regression table 1: female CVD mortality , male CVD mortality
+```{r, echo = FALSE, results='asis'}
+stargazer(mf1, mf2, mf3, mf4, type="html",
+out="man_results_regressiontable_1_n.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 1 n",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("female CVD mortality", "male CVD mortality"),
+omit.stat = c("ser")
+                               )
+```
+Regression table 2: CVD mortality , ratio CVD mortality (Qatar excluded)
+```{r, echo = FALSE, results='asis'}
+stargazer(mf5, mf6, mf7, mf8, type="html",
+out="man_results_regressiontable_2_n.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 2",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("CVD mortality", "female to male CVD mortality ratio"),
+omit.stat = c("ser")
+                               )
+```
+Regression table 3: Female and male life expectancy
+```{r}
+
+
+stargazer(mf9, mf10, mf11, mf12, type="html",
+out="man_results_regressiontable_3_n.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 3",
+dep.var.labels = c("female life expectancy", "male life expectancy"),
+covariate.labels = c("constant", "GSNI","log (physicians per 1000)", "mean years of schooling", "log (GDP per capita)", "GSNI data collection period 2010-2014", "MMR"),
+omit.stat = c("ser")
+                               )
+
+
+```
+ Regression table 4: sensitivityfemale CVD mortality , male CVD mortality
+```{r, echo = FALSE, results='asis'}
+stargazer(mf13, mf14, mf15, mf16, type="html",
+out="man_results_regressiontable_4_n.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 4",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("female CVD mortality 17", "male CVD mortality 17"),
+omit.stat = c("ser")
+                               )
+```
+
+
+
+Regression table 5: sensitivity CVD mortality , ratio CVD mortality (Qatar excluded)
+```{r, echo = FALSE, results='asis'}
+stargazer(mf17, mf18, mf19, mf20, type="html",
+out="man_results_regressiontable_5_n.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 5",
+covariate.labels = c("constant", "GSNI2","physicians per 1000", "mean years of schooling", "GDP per capita", "GSNI data collection period 2010-2014"),
+dep.var.labels = c("CVD mortality 17", "female to male CVD mortality ratio 17"),
+omit.stat = c("ser")
+                               )
+```
+
+
+
+
+Regression table 6: sensitivity Female and male life expectancy
+```{r}
+
+
+stargazer(mf21, mf22, mf23, mf24, type="html",
+out="man_results_regressiontable_6_n.doc",
+intercept.bottom = F, intercept.top = T,
+digits=2,
+model.names = F,
+single.row = T,
+star.char = c("*", "**", "***"),
+          star.cutoffs = c(.05, .01, .001),
+notes = c("* p<0.05; ** p<0.01; *** p<0.001"),
+notes.append=FALSE,
+title = "Results table 6",
+dep.var.labels = c("female life expectancy 19", "male life expectancy 19"),
+covariate.labels = c("constant", "GSNI","log (physicians per 1000)", "mean years of schooling", "log (GDP per capita)", "GSNI data collection period 2010-2014", "MMR"),
+omit.stat = c("ser")
+                               )
+
+
+```
+

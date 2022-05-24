@@ -1,0 +1,18 @@
+
+<table style="text-align:center"><caption><strong>Results table 1 n</strong></caption>
+<tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td colspan="4"><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="4" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td colspan="2">female CVD mortality</td><td colspan="2">male CVD mortality</td></tr>
+<tr><td style="text-align:left"></td><td>(1)</td><td>(2)</td><td>(3)</td><td>(4)</td></tr>
+<tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">constant</td><td>30.04 (39.25)</td><td>-133.15 (94.46)</td><td>108.45<sup>*</sup> (52.87)</td><td>-184.13 (104.74)</td></tr>
+<tr><td style="text-align:left">GSNI2</td><td>3.63<sup>***</sup> (0.58)</td><td>4.86<sup>***</sup> (0.84)</td><td>3.57<sup>***</sup> (0.78)</td><td>5.28<sup>***</sup> (0.93)</td></tr>
+<tr><td style="text-align:left">physicians per 1000</td><td></td><td>32.31 (19.26)</td><td></td><td>70.59<sup>**</sup> (21.35)</td></tr>
+<tr><td style="text-align:left">mean years of schooling</td><td></td><td>13.75 (9.37)</td><td></td><td>21.71<sup>*</sup> (10.39)</td></tr>
+<tr><td style="text-align:left">GDP per capita</td><td></td><td>-0.002<sup>*</sup> (0.001)</td><td></td><td>-0.004<sup>***</sup> (0.001)</td></tr>
+<tr><td style="text-align:left">GSNI data collection period 2010-2014</td><td></td><td>-97.89<sup>*</sup> (40.74)</td><td></td><td>-127.18<sup>**</sup> (45.17)</td></tr>
+<tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>75</td><td>67</td><td>75</td><td>67</td></tr>
+<tr><td style="text-align:left">R<sup>2</sup></td><td>0.35</td><td>0.49</td><td>0.23</td><td>0.56</td></tr>
+<tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.34</td><td>0.44</td><td>0.21</td><td>0.53</td></tr>
+<tr><td style="text-align:left">F Statistic</td><td>39.68<sup>***</sup> (df = 1; 73)</td><td>11.54<sup>***</sup> (df = 5; 61)</td><td>21.23<sup>***</sup> (df = 1; 73)</td><td>15.62<sup>***</sup> (df = 5; 61)</td></tr>
+<tr><td colspan="5" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td colspan="4" style="text-align:right">* p<0.05; ** p<0.01; *** p<0.001</td></tr>
+</table>
