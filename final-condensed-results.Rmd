@@ -225,6 +225,9 @@ ggsave("boxresults.png", boxes)
 
 outliercvd <- results14[cvd14fem>750,] 
 
+```
+
+#this scatter only shows outliers on graph
 scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
   geom_point(color = "violetred3")+
   geom_smooth(method = "lm")+
@@ -233,9 +236,17 @@ scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
                 #title = "Scatter plot of GSNI2 and female CVD mortality",
                 subtitle = paste("n = ", nrow(results14)))+
   ggrepel::geom_text_repel(data = outliercvd, aes(label = location_name                                        ))  
-
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 results14[,cor.test(twobias,cvd14fem,method = "spearman")]
 
+scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "female age standardised CVD mortaltiy rate (per 100k)",
+                #title = "Scatter plot of GSNI2 and female CVD mortality",
+                subtitle = paste("n = ", nrow(results14)))+
+  geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
 scatter1
 
 #positive correlation between GSNI and female CVD mortality rates (rho 0.67 p<0.05)
@@ -246,6 +257,7 @@ scatter1
 
 outliercvdm <- results14[cvd14male>750,] 
 
+```
 scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
   geom_point(color = "violetred3")+
   geom_smooth(method = "lm")+
@@ -254,8 +266,19 @@ scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
                 #title = "Scatter plot of GSNI2 and male CVD mortality",
                 subtitle = paste("n = ", nrow(results14)))+
   ggrepel::geom_text_repel(data = outliercvdm, aes(label = location_name                                        ))  
+  
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 results14[,cor.test(twobias,cvd14male,method = "spearman")]
+
+scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "male age standardised CVD mortaltiy rate (per 100k)",
+                #title = "Scatter plot of GSNI2 and male CVD mortality",
+                subtitle = paste("n = ", nrow(results14)))+
+ geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
 
 scatter2
 
