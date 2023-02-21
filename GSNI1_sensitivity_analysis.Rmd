@@ -1,0 +1,209 @@
+---
+title: "GSNI1 sensitivity analysis"
+author: "Iona Lyell"
+date: '2023-02-20'
+output: html_document
+---
+
+
+
+### load packages
+```{r}
+library(readr)
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(skimr)
+```
+
+#run original analyisis
+```{r, include=FALSE}
+
+results14 <- read_csv("analysisratio14.csv")
+setDT(results14)
+
+results14[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+results14[,"...1":= NULL]
+
+results17 <- read_csv("analysisratio17.csv")
+setDT(results17)
+
+results17[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+results17[,"...1":= NULL]
+
+
+
+mf1 <- lm(cvd14fem ~ twobias, data = results14)
+mf2 <- lm(cvd14fem ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = results14)
+
+mf3 <- lm(cvd14male ~ twobias, data = results14)
+mf4 <- lm(cvd14male ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = results14)
+
+mf5 <- lm(cvd14both ~ twobias, data = results14)
+mf6 <- lm(cvd14both ~ twobias + phy14edit + scl14+ GDP14+GSNI_PERIOD, data = results14)
+
+mf7 <- lm(cvdratio14 ~ twobias, data = results14)
+noQuatar14 <- results14[-52,]
+mf8 <- lm(cvdratio14 ~ twobias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = noQuatar14)
+
+mf9 <- lm(LEbirth2015 ~ twobias, data = results14)
+mf10 <- lm(LEbirth2015 ~ twobias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD + MMR14 , data = results14)
+
+mf11 <- lm(MLEbirth2015 ~ twobias, data = results14)
+mf12 <- lm(MLEbirth2015 ~ twobias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD , data = results14)
+```
+
+
+
+
+#add GSNI one bias to table
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+#add one bias to analysis table
+
+##load in gsni data
+
+gsni_tables <- read_excel("data/gsni_tables.xlsx")
+gsni_tables <- as.data.table(gsni_tables)
+
+#rename columns
+setnames(gsni_tables, "Table A1: Gender Social Norms Index (GSNI), last available period", "location_name")
+setnames(gsni_tables, "...2", "GSNI_PERIOD")
+setnames(gsni_tables, "...3", "onebias") #share of people with at least 1 bias (%)
+setnames(gsni_tables, "...4", "twobias") #share of people with at least 2 biases (%)
+setnames(gsni_tables, "...5", "nobias") #share of people with no (%)
+setnames(gsni_tables, "...6", "political") #share of people with political bias (%)
+setnames(gsni_tables, "...7", "economic") #share of people with economic bias (%)
+setnames(gsni_tables, "...8", "educational") #share of people with educational bias (%)
+setnames(gsni_tables, "...9", "physical") #share of people with physical bias (%)
+
+
+gsni_tables <- gsni_tables[8:82]
+ #n = 75
+
+```
+
+
+```{r}
+#addded onebias column to analysis ratio14
+analysisratio14 <- read_csv("analysisratio14.csv")
+sensresults <- setDT(analysisratio14, key = "location_name")[gsni_tables, "onebias" := i.onebias]
+#convert to numeric onebias
+sensresults[, onebias := as.numeric(onebias)]
+```
+
+
+#scatter plot GSNI 1 and 2
+
+```{r}
+ggplot(sensresults, aes(x = onebias, y = twobias)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")
+
+sensresults[,cor.test(twobias,onebias,method = "spearman")]
+#rho of 0.98 GSNI1 and GSNI2 are highly positively correlated
+```
+
+#run regressions with one bias as opposed to two bias
+
+```{r, include=FALSE}
+mf1.s <- lm(cvd14fem ~ onebias, data = sensresults)
+mf2.s <- lm(cvd14fem ~ onebias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = sensresults)
+
+mf3.s <- lm(cvd14male ~ onebias, data = sensresults)
+mf4.s <- lm(cvd14male ~ onebias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = sensresults)
+
+mf5.s <- lm(cvd14both ~ onebias, data = sensresults)
+mf6.s <- lm(cvd14both ~ onebias + phy14edit + scl14+ GDP14+GSNI_PERIOD, data = sensresults)
+
+mf7.s <- lm(cvdratio14 ~ onebias, data = sensresults)
+noQuatar14 <- sensresults[-52,]
+mf8.s <- lm(cvdratio14 ~ onebias + phy14edit + scl14 + GDP14 + GSNI_PERIOD, data = noQuatar14)
+
+mf9.s <- lm(LEbirth2015 ~ onebias, data = sensresults)
+mf10.s <- lm(LEbirth2015 ~ onebias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD + MMR14 , data = sensresults)
+
+mf11.s <- lm(MLEbirth2015 ~ onebias, data = sensresults)
+mf12.s <- lm(MLEbirth2015 ~ onebias + log(phy14edit) + scl14 + log(GDP14) + GSNI_PERIOD , data = sensresults)
+
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf1
+mf1.s
+
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf2
+mf2.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf3
+mf3.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf4
+mf4.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf5
+mf5.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf6
+mf6.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf7
+mf7.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf8
+mf8.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf9
+mf9.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf10
+mf10.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf11
+mf11.s
+```
+
+```{r}
+#compare mf1 to mf1.s etc
+mf12
+mf12.s
+```
+
+
+
+#SUMMARY coefficients are similar/larger 

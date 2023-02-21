@@ -29,6 +29,7 @@ library(performance)
 library(see)
 library(stargazer)
 library(cowplot)
+library(ggiraph)
 
 ```
 
@@ -223,9 +224,7 @@ ggsave("boxresults.png", boxes)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-outliercvd <- results14[cvd14fem>750,] 
-
-```
+outliercvdf <- results14[cvd14fem>750,] 
 
 #this scatter only shows outliers on graph
 scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
@@ -235,11 +234,14 @@ scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
                 y = "female age standardised CVD mortaltiy rate (per 100k)",
                 #title = "Scatter plot of GSNI2 and female CVD mortality",
                 subtitle = paste("n = ", nrow(results14)))+
-  ggrepel::geom_text_repel(data = outliercvd, aes(label = location_name                                        ))  
+  ggrepel::geom_text_repel(data = outliercvdf, aes(label = location_name                                        ))  
+scatter1
+```
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 results14[,cor.test(twobias,cvd14fem,method = "spearman")]
 
-scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
+scatter1.1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
   geom_point(color = "violetred3")+
   geom_smooth(method = "lm")+
          labs(x = "GSNI2 (%)",
@@ -247,7 +249,7 @@ scatter1 <- ggplot(results14, aes(x = twobias, y = cvd14fem)) +
                 #title = "Scatter plot of GSNI2 and female CVD mortality",
                 subtitle = paste("n = ", nrow(results14)))+
   geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
-scatter1
+scatter1.1
 
 #positive correlation between GSNI and female CVD mortality rates (rho 0.67 p<0.05)
 ```
@@ -255,9 +257,8 @@ scatter1
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
+#scatter with outliers labelled only
 outliercvdm <- results14[cvd14male>750,] 
-
-```
 scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
   geom_point(color = "violetred3")+
   geom_smooth(method = "lm")+
@@ -266,12 +267,17 @@ scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
                 #title = "Scatter plot of GSNI2 and male CVD mortality",
                 subtitle = paste("n = ", nrow(results14)))+
   ggrepel::geom_text_repel(data = outliercvdm, aes(label = location_name                                        ))  
+scatter2
+
+```
+
+
   
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 results14[,cor.test(twobias,cvd14male,method = "spearman")]
 
-scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
+scatter2.1 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
   geom_point(color = "violetred3")+
   geom_smooth(method = "lm")+
          labs(x = "GSNI2 (%)",
@@ -280,13 +286,12 @@ scatter2 <- ggplot(results14, aes(x = twobias, y = cvd14male)) +
                 subtitle = paste("n = ", nrow(results14)))+
  geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
 
-scatter2
+scatter2.1
 
 #positive correlation between GSNI and male CVD mortality rates (rho 0.53 p<0.05)
 ```
-
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+#scatter with outliers labelled only
 outliercvdboth <- results14[cvd14both>800,]
 scatter3 <- ggplot(results14, aes(x = twobias, y = cvd14both)) +
   geom_point(color = "violetred3")+
@@ -296,16 +301,30 @@ scatter3 <- ggplot(results14, aes(x = twobias, y = cvd14both)) +
                 #title = "Scatter plot of GSNI2 and CVD mortality (2014)",
                 subtitle = paste("n = ", nrow(results14)))+
                  ggrepel::geom_text_repel(data = outliercvdboth, aes(label = location_name                                        )) 
+scatter3
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+scatter3.1 <- ggplot(results14, aes(x = twobias, y = cvd14both)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "age standardised CVD mortaltiy rate (per 100k)",
+                #title = "Scatter plot of GSNI2 and CVD mortality (2014)",
+                subtitle = paste("n = ", nrow(results14)))+
+geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
 
 results14[,cor.test(twobias,cvd14both,method = "spearman")]
 
-scatter3
+scatter3.1
 
 #positive correlation between GSNI and female CVD mortality rates (rho 0.60 p<0.05)
 
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+#scatter with outliers labelled only
 outliercvdratio <- results14[cvdratio14>1.25,]
 scatter4 <- ggplot(results14, aes(x = twobias, y = cvdratio14)) +
   geom_point(color = "violetred3")+
@@ -315,19 +334,29 @@ scatter4 <- ggplot(results14, aes(x = twobias, y = cvdratio14)) +
                 #title = "Scatter plot of GSNI2 and CVD mortality (2014)",
                 subtitle = paste("n = ", nrow(results14)))+
                  ggrepel::geom_text_repel(data = outliercvdratio, aes(label = location_name                                        )) 
+scatter4
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+outliercvdratio <- results14[cvdratio14>1.25,]
+scatter4.1 <- ggplot(results14, aes(x = twobias, y = cvdratio14)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "female to male CVD mortality ratio",
+                #title = "Scatter plot of GSNI2 and CVD mortality (2014)",
+                subtitle = paste("n = ", nrow(results14)))+
+  geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
 
 results14[,cor.test(twobias,cvdratio14,method = "spearman")]
 
-scatter4
+scatter4.1
 
 #positive correlation between GSNI and female CVD mortality rates (rho 0.57 p<0.05)
 
 ```
-
-
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+scatter with outliers labelled only
 out <- filter(results14, LEbirth2015 <63 | LEbirth2015 <70 & twobias <50)
 
 
@@ -339,16 +368,29 @@ scatter5 <- ggplot(results14, aes(x = twobias, y = LEbirth2015)) +
                 #title = "Scatter plot of GSNI2 and female life expectancy",
               subtitle = paste("n = ", nrow(results14))) +
                ggrepel::geom_text_repel(data = out, aes(label = location_name))
-
-results14[,cor.test(twobias,LEbirth2015,method = "spearman")]   
-
 scatter5
 
-#See a negative correlation with female life expectancy and GSNI (rho -0.72, p-value <0.05)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
+scatter5.1<- ggplot(results14, aes(x = twobias, y = LEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "female life expectancy (years)",
+                #title = "Scatter plot of GSNI2 and female life expectancy",
+              subtitle = paste("n = ", nrow(results14))) +
+              geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
+
+results14[,cor.test(twobias,LEbirth2015,method = "spearman")]   
+
+scatter5.1
+
+#See a negative correlation with female life expectancy and GSNI (rho -0.72, p-value <0.05)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#scatter with outliers labelled only
 out <- filter(results14, MLEbirth2015 <58 | MLEbirth2015 <70 & twobias <50)
 
 
@@ -360,23 +402,35 @@ scatter6 <- ggplot(results14, aes(x = twobias, y = MLEbirth2015)) +
                 #title = "Scatter plot of GSNI2 and male life expectancy",
               subtitle = paste("n = ", nrow(results14))) +
                ggrepel::geom_text_repel(data = out, aes(label = location_name))
+scatter6
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+scatter6.1 <- ggplot(results14, aes(x = twobias, y = MLEbirth2015)) +
+  geom_point(color = "violetred3")+
+  geom_smooth(method = "lm")+
+         labs(x = "GSNI2 (%)",
+                y = "male life expectancy (years)",
+                #title = "Scatter plot of GSNI2 and male life expectancy",
+              subtitle = paste("n = ", nrow(results14))) +
+geom_text(data=results14, aes(label=location_name), check_overlap = TRUE)
 
 results14[,cor.test(twobias,MLEbirth2015,method = "spearman")]   
 
-scatter6
+scatter6.1
 
 #See a negative correlation with female life expectancy and GSNI (rho -0.61, p-value <0.05)
 ```
 
 
 ```{r}
-
-scatterresults1 <- plot_grid(scatter1, scatter2, scatter3, scatter4, labels="AUTO")
-scatterresults1
-scatterresults2 <- plot_grid(scatter5, scatter6, labels="AUTO")
-scatterresults2
-ggsave("scatterresults1.png", scatterresults1, width = 28, height = 25, units = "cm")
-ggsave("scatterresults2.png", scatterresults2, width = 28, height = 16, units = "cm")
+#not uniform axis
+#scatterresults1 <- plot_grid(scatter1, scatter2, scatter3, scatter4, labels="AUTO")
+#scatterresults1
+#scatterresults2 <- plot_grid(scatter5, scatter6, labels="AUTO")
+#scatterresults2
+#ggsave("scatterresults1.png", scatterresults1, width = 28, height = 25, units = "cm")
+#ggsave("scatterresults2.png", scatterresults2, width = 28, height = 16, units = "cm")
 ```
 
  
@@ -399,19 +453,19 @@ In order for this to work, your table of data needs to be in long format, so hav
  
 I use this cheat sheet all the time: https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-visualization.pdf !
 
-#final scatter
-```{r}
+#final scatter with outliers only labelled
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 #wide to long format for consistent scatters
-analysis14copy <- copy(analysis14)
+results14copy <- copy(results14)
 
-long_14cvd <- melt(data = analysis14copy,
+long_14cvd <- melt(data = results14copy,
                 id.vars= c("location_name", "twobias"),
                 measure.vars = c("cvd14fem", "cvd14male", "cvd14both"),
                 variable.name = "cvdcat",
                 value.name = "rate"
                 )
 
-long_14LE <- melt(data = analysis14copy, 
+long_14LE <- melt(data = results14copy, 
                   id.vars = c("location_name", "twobias"),
                   measure.vars = c("LEbirth2015", "MLEbirth2015"),
                   variable.name = "le",
@@ -425,7 +479,11 @@ names(cvd.labs) <- c("cvd14fem", "cvd14male", "cvd14both")
 #data for outliers 
 outliercvd <- long_14cvd[rate>750,] 
 
+```
 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#scatter cvd outliers labelled
 p1 <- ggplot(long_14cvd, aes(x = twobias, y = rate)) +
   geom_point(color = "violetred3")+
 facet_grid(cols = vars(cvdcat),
@@ -433,7 +491,8 @@ facet_grid(cols = vars(cvdcat),
   geom_smooth(method = "lm") +
    labs(x = "GSNI2 (%)",
         y = "age standardised CVD mortaltiy rate (per 100k)" )+
-  ggrepel::geom_text_repel(data = outliercvd, aes(label = location_name                                        ))  
+  ggrepel::geom_text_repel(data = outliercvd, aes(label = location_name                                        ))
+p1
 
 scatterfinal1 <- p1 + theme(text=element_text(size=30), #change font size of all text
         axis.text=element_text(size=20), #change font size of axis text
@@ -445,7 +504,10 @@ scatterfinal1 <- p1 + theme(text=element_text(size=30), #change font size of all
         
 ggsave("scatterfinal1.png", scatterfinal1, width = 35, height = 20, units = "cm")
 
+```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#scatter for life expectancy not labelled
 #labels for facets
 le.labs <- c("female", "male")
 names(le.labs) <- c("LEbirth2015", "MLEbirth2015")
@@ -466,11 +528,129 @@ scatterfinal2 <- p2 + theme(text=element_text(size=30), #change font size of all
         legend.title=element_text(size=20)) #change font size of legend title 
 
 ggsave("scatterfinal2.png", scatterfinal2, width = 35, height = 20, units = "cm")
-
 ```
 
 
 
+
+
+
+
+```{r}
+#scatters all countries labelled cvd
+
+#labels for facets
+cvd.labs <- c("female", "male", "population")
+names(cvd.labs) <- c("cvd14fem", "cvd14male", "cvd14both")
+
+p1lab <- ggplot(long_14cvd, aes(x = twobias, y = rate)) +
+  geom_point(color = "violetred3")+
+facet_grid(cols = vars(cvdcat),
+             labeller = labeller(cvdcat = cvd.labs)) +
+  geom_smooth(method = "lm") +
+   labs(x = "GSNI2 (%)",
+        y = "age standardised CVD mortaltiy rate (per 100k)" )+
+   ggrepel::geom_text_repel(data = long_14cvd, aes(label = location_name                                        ))  
+
+scatterfinal1lab <- p1lab + theme(text=element_text(size=30), #change font size of all text
+        axis.text=element_text(size=20), #change font size of axis text
+        axis.title=element_text(size=20), #change font size of axis titles
+        plot.title=element_text(size=20), #change font size of plot title
+        legend.text=element_text(size=20), #change font size of legend text
+        legend.title=element_text(size=20)) #change font size of legend title 
+
+scatterfinal1lab
+        
+ggsave("scatterfinal1_labelled.png", scatterfinal1lab, width = 35, height = 20, units = "cm")
+```
+
+
+
+
+```{r}
+#scatters all countries labelled LE
+#labels for facets
+le.labs <- c("female", "male")
+names(le.labs) <- c("LEbirth2015", "MLEbirth2015")
+
+p2lab <- ggplot(long_14LE, aes(x = twobias, y = years)) +
+  geom_point(color = "violetred3")+
+facet_grid(cols = vars(le),
+           labeller = labeller(le = le.labs)) +
+  geom_smooth(method = "lm")+
+   labs(x = "GSNI2 (%)",
+        y = "life expectancy (years)" )+
+ ggrepel::geom_text_repel(data = long_14LE, aes(label = location_name                                        ))  
+
+scatterfinal2lab <- p2lab + theme(text=element_text(size=30), #change font size of all text
+        axis.text=element_text(size=20), #change font size of axis text
+        axis.title=element_text(size=20), #change font size of axis titles
+        plot.title=element_text(size=20), #change font size of plot title
+        legend.text=element_text(size=20), #change font size of legend text
+        legend.title=element_text(size=20)) #change font size of legend title 
+
+ggsave("scatterfinal2_labelled.png", scatterfinal2lab, width = 35, height = 20, units = "cm")
+
+
+```
+
+#interactive charts
+##interactive cvd
+```{r}
+#scatters all countries labelled cvd interactive
+
+#labels for facets
+cvd.labs <- c("female", "male", "population")
+names(cvd.labs) <- c("cvd14fem", "cvd14male", "cvd14both")
+
+p1int <- ggplot(long_14cvd, aes(x = twobias, y = rate)) +
+  geom_point(color = "violetred3")+
+facet_grid(cols = vars(cvdcat),
+             labeller = labeller(cvdcat = cvd.labs)) +
+  geom_smooth(method = "lm") +
+   labs(x = "GSNI2 (%)",
+        y = "age standardised CVD mortaltiy rate (per 100k)" )+
+   ggrepel::geom_text_repel(data = long_14cvd, aes(label = location_name                                        ))  
+
+scatterfinal1int <- p1int + theme(text=element_text(size=30), #change font size of all text
+        axis.text=element_text(size=20), #change font size of axis text
+        axis.title=element_text(size=20), #change font size of axis titles
+        plot.title=element_text(size=20), #change font size of plot title
+        legend.text=element_text(size=20), #change font size of legend text
+        legend.title=element_text(size=20)) #change font size of legend title 
+
+scatterfinal1int
+        
+
+```
+
+##interactive LE
+```{r}
+#scatters all countries labelled LE
+#labels for facets
+le.labs <- c("female", "male")
+names(le.labs) <- c("LEbirth2015", "MLEbirth2015")
+
+p2int <- ggplot(long_14LE, aes(x = twobias, y = years)) +
+  geom_point(color = "violetred3")+
+facet_grid(cols = vars(le),
+           labeller = labeller(le = le.labs)) +
+  geom_smooth(method = "lm")+
+   labs(x = "GSNI2 (%)",
+        y = "life expectancy (years)" )+
+ ggrepel::geom_text_repel(data = long_14LE, aes(label = location_name                                        ))  
+
+scatterfinal2int <- p2int + theme(text=element_text(size=30), #change font size of all text
+        axis.text=element_text(size=20), #change font size of axis text
+        axis.title=element_text(size=20), #change font size of axis titles
+        plot.title=element_text(size=20), #change font size of plot title
+        legend.text=element_text(size=20), #change font size of legend text
+        legend.title=element_text(size=20)) #change font size of legend title 
+
+
+
+
+```
 
 
 
