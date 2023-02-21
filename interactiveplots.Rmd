@@ -7,24 +7,113 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(qwraps2)
+options(qwraps2_markup = "markdown")
+library(readr)
+library(readxl)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(skimr)
+library(tidyverse)
+library(broom)
+library(knitr)
+library(SmartEDA)
+library(performance)
+library(see)
+library(stargazer)
+library(cowplot)
+library(ggiraph)
 ```
 
-## R Markdown
+```{r include=FALSE}
+#set up data table
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+results14 <- read_csv("analysisratio14.csv")
+setDT(results14)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+results14[, GSNI_PERIOD := as.factor(GSNI_PERIOD)]
+results14[,"...1":= NULL]
 
-```{r cars}
-summary(cars)
+results14copy <- copy(results14)
+
+long_14cvd <- melt(data = results14copy,
+                id.vars= c("location_name", "twobias"),
+                measure.vars = c("cvd14fem", "cvd14male", "cvd14both"),
+                variable.name = "cvdcat",
+                value.name = "rate"
+                )
+
+long_14LE <- melt(data = results14copy, 
+                  id.vars = c("location_name", "twobias"),
+                  measure.vars = c("LEbirth2015", "MLEbirth2015"),
+                  variable.name = "le",
+                  value.name = "years"
+                  )
+
 ```
 
-## Including Plots
+#interactive charts
+##interactive cvd chart
+```{r}
+#scatters all countries labelled cvd interactive
 
-You can also embed plots, for example:
+#labels for facets
+cvd.labs <- c("female", "male", "population")
+names(cvd.labs) <- c("cvd14fem", "cvd14male", "cvd14both")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+p1int <- ggplot(data = long_14cvd) +
+  geom_point_interactive(color = "lightblue3",size=3, aes(x=twobias, y=rate, tooltip=location_name, data_id=location_name)) +
+facet_grid(cols = vars(cvdcat),
+             labeller = labeller(cvdcat = cvd.labs)) +
+   labs(x = "GSNI2 (%)",
+        y = "age standardised CVD mortaltiy rate (per 100k)" ) +
+  theme_light()
+                              
+
+scatterfinal1int <- p1int + theme(text=element_text(size=20), #change font size of all text
+        axis.text=element_text(size=10), #change font size of axis text
+        axis.title=element_text(size=15), #change font size of axis titles
+        plot.title=element_text(size=15), #change font size of plot title
+        legend.text=element_text(size=15), #change font size of legend text
+        legend.title=element_text(size=15)) #change font size of legend title 
+
+girafe(ggobj = scatterfinal1int, width_svg = 10, height_svg = 6)
+        
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+##interactive LE chart
+```{r}
+#scatters all countries labelled LE
+#labels for facets
+le.labs <- c("female", "male")
+names(le.labs) <- c("LEbirth2015", "MLEbirth2015")
+
+
+p2int <- ggplot(data = long_14LE) +
+  geom_point_interactive(color = "thistle", size=3, aes(x = twobias, y = years, tooltip=location_name, data_id=location_name)) +
+facet_grid(cols = vars(le),
+           labeller = labeller(le = le.labs)) +
+   labs(x = "GSNI2 (%)",
+        y = "life expectancy (years)" )+
+theme_light()                                     
+
+scatterfinal2int <- p2int + theme(text=element_text(size=20), #change font size of all text
+        axis.text=element_text(size=10), #change font size of axis text
+        axis.title=element_text(size=15), #change font size of axis titles
+        plot.title=element_text(size=15), #change font size of plot title
+        legend.text=element_text(size=15), #change font size of legend text
+        legend.title=element_text(size=15)) #change font size of legend title 
+
+girafe(ggobj = scatterfinal2int, width_svg = 10, height_svg = 6)
+
+```
+
+#notes
+CVD mortality rates from 2014 data source:Global Burden of Disease Study 2019
+
+Life expectancy at birth from 2015 data source: World Health Observatory
+
+Gender Social Nomrs Index collected 2005-2014
