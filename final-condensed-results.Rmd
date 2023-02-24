@@ -603,23 +603,23 @@ ggsave("scatterfinal2_labelled.png", scatterfinal2lab, width = 35, height = 20, 
 cvd.labs <- c("female", "male", "population")
 names(cvd.labs) <- c("cvd14fem", "cvd14male", "cvd14both")
 
-p1int <- ggplot(long_14cvd, aes(x = twobias, y = rate)) +
-  geom_point(color = "violetred3")+
+p1int <- ggplot(data = long_14cvd) +
+  geom_point_interactive(color = "lightblue3",size=3, aes(x=twobias, y=rate, tooltip=location_name, data_id=location_name)) +
 facet_grid(cols = vars(cvdcat),
              labeller = labeller(cvdcat = cvd.labs)) +
-  geom_smooth(method = "lm") +
    labs(x = "GSNI2 (%)",
-        y = "age standardised CVD mortaltiy rate (per 100k)" )+
-   ggrepel::geom_text_repel(data = long_14cvd, aes(label = location_name                                        ))  
+        y = "age standardised CVD mortaltiy rate (per 100k)" ) +
+  theme_light()
+                              
 
-scatterfinal1int <- p1int + theme(text=element_text(size=30), #change font size of all text
-        axis.text=element_text(size=20), #change font size of axis text
-        axis.title=element_text(size=20), #change font size of axis titles
-        plot.title=element_text(size=20), #change font size of plot title
-        legend.text=element_text(size=20), #change font size of legend text
-        legend.title=element_text(size=20)) #change font size of legend title 
+scatterfinal1int <- p1int + theme(text=element_text(size=20), #change font size of all text
+        axis.text=element_text(size=10), #change font size of axis text
+        axis.title=element_text(size=15), #change font size of axis titles
+        plot.title=element_text(size=15), #change font size of plot title
+        legend.text=element_text(size=15), #change font size of legend text
+        legend.title=element_text(size=15)) #change font size of legend title 
 
-scatterfinal1int
+girafe(ggobj = scatterfinal1int, width_svg = 10, height_svg = 6)
         
 
 ```
@@ -631,24 +631,23 @@ scatterfinal1int
 le.labs <- c("female", "male")
 names(le.labs) <- c("LEbirth2015", "MLEbirth2015")
 
-p2int <- ggplot(long_14LE, aes(x = twobias, y = years)) +
-  geom_point(color = "violetred3")+
+
+p2int <- ggplot(data = long_14LE) +
+  geom_point_interactive(color = "thistle", size=3, aes(x = twobias, y = years, tooltip=location_name, data_id=location_name)) +
 facet_grid(cols = vars(le),
            labeller = labeller(le = le.labs)) +
-  geom_smooth(method = "lm")+
    labs(x = "GSNI2 (%)",
         y = "life expectancy (years)" )+
- ggrepel::geom_text_repel(data = long_14LE, aes(label = location_name                                        ))  
+theme_light()                                     
 
-scatterfinal2int <- p2int + theme(text=element_text(size=30), #change font size of all text
-        axis.text=element_text(size=20), #change font size of axis text
-        axis.title=element_text(size=20), #change font size of axis titles
-        plot.title=element_text(size=20), #change font size of plot title
-        legend.text=element_text(size=20), #change font size of legend text
-        legend.title=element_text(size=20)) #change font size of legend title 
+scatterfinal2int <- p2int + theme(text=element_text(size=20), #change font size of all text
+        axis.text=element_text(size=10), #change font size of axis text
+        axis.title=element_text(size=15), #change font size of axis titles
+        plot.title=element_text(size=15), #change font size of plot title
+        legend.text=element_text(size=15), #change font size of legend text
+        legend.title=element_text(size=15)) #change font size of legend title 
 
-
-
+girafe(ggobj = scatterfinal2int, width_svg = 10, height_svg = 6)
 
 ```
 
