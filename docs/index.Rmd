@@ -55,7 +55,7 @@ long_14LE <- melt(data = results14copy,
 
 ```
 
-Interactive Plots
+Interactive Plots - Please hover over data points to see which country they correspond to
 ```{r, echo=FALSE}
 #labels for facets
 cvd.labs <- c("female", "male", "population")
